@@ -14,6 +14,9 @@ Gimbal::Gimbal(const std::string & config_path)
 
   try {
     serial_.setPort(com_port);
+    serial_.setBaudrate(115200);
+    serial::Timeout timeout = serial::Timeout::simpleTimeout(100);
+    serial_.setTimeout(timeout);
     serial_.open();
   } catch (const std::exception & e) {
     tools::logger()->error("[Gimbal] Failed to open serial: {}", e.what());
@@ -79,18 +82,22 @@ Eigen::Quaterniond Gimbal::q(std::chrono::steady_clock::time_point t)
 
 void Gimbal::send(io::VisionToGimbal VisionToGimbal)
 {
-  tx_data_.mode = VisionToGimbal.mode;
-  tx_data_.yaw = VisionToGimbal.yaw;
-  tx_data_.yaw_vel = VisionToGimbal.yaw_vel;
-  tx_data_.yaw_acc = VisionToGimbal.yaw_acc;
+  tx_data_.tracking = VisionToGimbal.tracking;
   tx_data_.pitch = VisionToGimbal.pitch;
-  tx_data_.pitch_vel = VisionToGimbal.pitch_vel;
-  tx_data_.pitch_acc = VisionToGimbal.pitch_acc;
-  tx_data_.crc16 = tools::get_crc16(
-    reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_) - sizeof(tx_data_.crc16));
+  tx_data_.yaw = VisionToGimbal.yaw;
+  tx_data_.fire = VisionToGimbal.fire;
+  tx_data_.fric_on = VisionToGimbal.fric_on;
+  tx_data_.checksum = tools::get_crc16(
+    reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_) - sizeof(tx_data_.checksum));
 
   try {
     serial_.write(reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_));
+    std::string hex;
+    uint8_t * p = reinterpret_cast<uint8_t *>(&tx_data_);
+    for (size_t i = 0; i < sizeof(tx_data_); ++i) {
+      hex += fmt::format("{:02X} ", p[i]);
+    }
+    // tools::logger()->info("[Gimbal] TX: {}", hex);
   } catch (const std::exception & e) {
     tools::logger()->warn("[Gimbal] Failed to write serial: {}", e.what());
   }
@@ -100,18 +107,22 @@ void Gimbal::send(
   bool control, bool fire, float yaw, float yaw_vel, float yaw_acc, float pitch, float pitch_vel,
   float pitch_acc)
 {
-  tx_data_.mode = control ? (fire ? 2 : 1) : 0;
+  tx_data_.tracking = control;
   tx_data_.yaw = yaw;
-  tx_data_.yaw_vel = yaw_vel;
-  tx_data_.yaw_acc = yaw_acc;
   tx_data_.pitch = pitch;
-  tx_data_.pitch_vel = pitch_vel;
-  tx_data_.pitch_acc = pitch_acc;
-  tx_data_.crc16 = tools::get_crc16(
-    reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_) - sizeof(tx_data_.crc16));
+  tx_data_.fire = fire ? 1 : 0;
+  tx_data_.fric_on = control ? 1 : 0;
+  tx_data_.checksum = tools::get_crc16(
+    reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_) - sizeof(tx_data_.checksum));
 
   try {
     serial_.write(reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_));
+    std::string hex;
+    uint8_t * p = reinterpret_cast<uint8_t *>(&tx_data_);
+    for (size_t i = 0; i < sizeof(tx_data_); ++i) {
+      hex += fmt::format("{:02X} ", p[i]);
+    }
+    // tools::logger()->info("[Gimbal] TX: {}", hex);
   } catch (const std::exception & e) {
     tools::logger()->warn("[Gimbal] Failed to write serial: {}", e.what());
   }
@@ -140,18 +151,19 @@ void Gimbal::read_thread()
       continue;
     }
 
-    if (!read(reinterpret_cast<uint8_t *>(&rx_data_), sizeof(rx_data_.head))) {
+    if (!read(reinterpret_cast<uint8_t *>(&rx_data_.header), 1)) {
       error_count++;
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
       continue;
     }
 
-    if (rx_data_.head[0] != 'S' || rx_data_.head[1] != 'P') continue;
+    if (rx_data_.header != 0x5A) continue;
 
     auto t = std::chrono::steady_clock::now();
 
     if (!read(
-          reinterpret_cast<uint8_t *>(&rx_data_) + sizeof(rx_data_.head),
-          sizeof(rx_data_) - sizeof(rx_data_.head))) {
+          reinterpret_cast<uint8_t *>(&rx_data_) + 1,
+          sizeof(rx_data_) - 1)) {
       error_count++;
       continue;
     }
@@ -162,7 +174,12 @@ void Gimbal::read_thread()
     }
 
     error_count = 0;
-    Eigen::Quaterniond q(rx_data_.q[0], rx_data_.q[1], rx_data_.q[2], rx_data_.q[3]);
+    
+    // Euler to Quaternion (Z-Y-X convolution: Yaw-Pitch-Roll)
+    Eigen::Quaterniond q = Eigen::AngleAxisd(rx_data_.yaw, Eigen::Vector3d::UnitZ()) *
+                           Eigen::AngleAxisd(rx_data_.pitch, Eigen::Vector3d::UnitY()) *
+                           Eigen::AngleAxisd(rx_data_.roll, Eigen::Vector3d::UnitX());
+    
     queue_.push({q, t});
 
     std::lock_guard<std::mutex> lock(mutex_);
@@ -171,27 +188,16 @@ void Gimbal::read_thread()
     state_.yaw_vel = rx_data_.yaw_vel;
     state_.pitch = rx_data_.pitch;
     state_.pitch_vel = rx_data_.pitch_vel;
-    state_.bullet_speed = rx_data_.bullet_speed;
-    state_.bullet_count = rx_data_.bullet_count;
+    state_.roll = rx_data_.roll;
+    state_.yaw_odom = rx_data_.yaw_odom;
+    state_.pitch_odom = rx_data_.pitch_odom;
+    state_.bullet_speed = 0;
+    state_.bullet_count = 0;
+    state_.robot_id = rx_data_.robot_id;
 
-    switch (rx_data_.mode) {
-      case 0:
-        mode_ = GimbalMode::IDLE;
-        break;
-      case 1:
-        mode_ = GimbalMode::AUTO_AIM;
-        break;
-      case 2:
-        mode_ = GimbalMode::SMALL_BUFF;
-        break;
-      case 3:
-        mode_ = GimbalMode::BIG_BUFF;
-        break;
-      default:
-        mode_ = GimbalMode::IDLE;
-        tools::logger()->warn("[Gimbal] Invalid mode: {}", rx_data_.mode);
-        break;
-    }
+    // Mapping detect_color to mode as a placeholder or using it directly
+    // If detect_color is 0 (Red), maybe we call it AUTO_AIM?
+    mode_ = GimbalMode::AUTO_AIM; 
   }
 
   tools::logger()->info("[Gimbal] read_thread stopped.");

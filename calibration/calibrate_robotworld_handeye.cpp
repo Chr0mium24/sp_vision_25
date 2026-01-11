@@ -1,6 +1,7 @@
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
+#include <algorithm>
 #include <Eigen/Dense>  // 必须在opencv2/core/eigen.hpp上面
 #include <fstream>
 #include <opencv2/core/eigen.hpp>
@@ -49,6 +50,11 @@ void load(
   auto pattern_cols = yaml["pattern_cols"].as<int>();
   auto pattern_rows = yaml["pattern_rows"].as<int>();
   auto center_distance_mm = yaml["center_distance_mm"].as<double>();
+  std::string pattern_type = "circle_grid";
+  if (yaml["pattern_type"]) {
+    pattern_type = yaml["pattern_type"].as<std::string>();
+  }
+  std::transform(pattern_type.begin(), pattern_type.end(), pattern_type.begin(), ::tolower);
   R_gimbal2imubody_data = yaml["R_gimbal2imubody"].as<std::vector<double>>();
   auto camera_matrix_data = yaml["camera_matrix"].as<std::vector<double>>();
   auto distort_coeffs_data = yaml["distort_coeffs"].as<std::vector<double>>();
@@ -80,7 +86,21 @@ void load(
 
     // 识别标定板
     std::vector<cv::Point2f> centers_2d;
-    auto success = cv::findCirclesGrid(img, pattern_size, centers_2d);  // 默认是对称圆点图案
+    bool success = false;
+    if (pattern_type == "chessboard" || pattern_type == "checkerboard") {
+      int flags = cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE |
+                  cv::CALIB_CB_FAST_CHECK;
+      success = cv::findChessboardCorners(img, pattern_size, centers_2d, flags);
+      if (success) {
+        cv::Mat gray;
+        cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+        cv::cornerSubPix(
+          gray, centers_2d, cv::Size(11, 11), cv::Size(-1, -1),
+          cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 30, 0.1));
+      }
+    } else {
+      success = cv::findCirclesGrid(img, pattern_size, centers_2d);  // 默认是对称圆点图案
+    }
 
     // 显示识别结果
     cv::drawChessboardCorners(drawing, pattern_size, centers_2d, success);

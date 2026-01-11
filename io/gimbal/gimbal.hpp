@@ -16,31 +16,36 @@ namespace io
 {
 struct __attribute__((packed)) GimbalToVision
 {
-  uint8_t head[2] = {'S', 'P'};
-  uint8_t mode;  // 0: 空闲, 1: 自瞄, 2: 小符, 3: 大符
-  float q[4];    // wxyz顺序
-  float yaw;
-  float yaw_vel;
-  float pitch;
-  float pitch_vel;
-  float bullet_speed;
-  uint16_t bullet_count;  // 子弹累计发送次数
-  uint16_t crc16;
+  uint8_t header = 0x5A;
+  uint8_t detect_color : 1;  // 0: 红, 1: 蓝
+  uint8_t reset_tracker : 1;
+  uint8_t reserved : 6;
+  float yaw;    // rad
+  float pitch;  // rad
+  float roll;   // rad
+  float yaw_odom;
+  float pitch_odom;
+  float yaw_vel;    // rad/s
+  float pitch_vel;  // rad/s
+  float roll_vel;   // rad/s
+  float aim_x;
+  float aim_y;
+  float aim_z;
+  uint8_t robot_id;
+  uint16_t checksum;
 };
 
 static_assert(sizeof(GimbalToVision) <= 64);
 
 struct __attribute__((packed)) VisionToGimbal
 {
-  uint8_t head[2] = {'S', 'P'};
-  uint8_t mode;  // 0: 不控制, 1: 控制云台但不开火，2: 控制云台且开火
-  float yaw;
-  float yaw_vel;
-  float yaw_acc;
+  uint8_t header = 0xA5;
+  uint8_t tracking;
   float pitch;
-  float pitch_vel;
-  float pitch_acc;
-  uint16_t crc16;
+  float yaw;
+  uint8_t fire;
+  uint8_t fric_on;
+  uint16_t checksum;
 };
 
 static_assert(sizeof(VisionToGimbal) <= 64);
@@ -59,8 +64,12 @@ struct GimbalState
   float yaw_vel;
   float pitch;
   float pitch_vel;
+  float roll;
+  float yaw_odom;
+  float pitch_odom;
   float bullet_speed;
   uint16_t bullet_count;
+  uint8_t robot_id;
 };
 
 class Gimbal

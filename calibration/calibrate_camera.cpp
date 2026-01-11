@@ -1,6 +1,7 @@
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
+#include <algorithm>
 #include <fstream>
 #include <opencv2/opencv.hpp>
 
@@ -32,6 +33,11 @@ void load(
   auto pattern_cols = yaml["pattern_cols"].as<int>();
   auto pattern_rows = yaml["pattern_rows"].as<int>();
   auto center_distance_mm = yaml["center_distance_mm"].as<double>();
+  std::string pattern_type = "circle_grid";
+  if (yaml["pattern_type"]) {
+    pattern_type = yaml["pattern_type"].as<std::string>();
+  }
+  std::transform(pattern_type.begin(), pattern_type.end(), pattern_type.begin(), ::tolower);
   cv::Size pattern_size(pattern_cols, pattern_rows);
 
   for (int i = 1; true; i++) {
@@ -45,7 +51,22 @@ void load(
 
     // 识别标定板
     std::vector<cv::Point2f> centers_2d;
-    auto success = cv::findCirclesGrid(img, pattern_size, centers_2d, cv::CALIB_CB_SYMMETRIC_GRID);
+    bool success = false;
+    if (pattern_type == "chessboard" || pattern_type == "checkerboard") {
+      int flags = cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE |
+                  cv::CALIB_CB_FAST_CHECK;
+      success = cv::findChessboardCorners(img, pattern_size, centers_2d, flags);
+      if (success) {
+        cv::Mat gray;
+        cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+        cv::cornerSubPix(
+          gray, centers_2d, cv::Size(11, 11), cv::Size(-1, -1),
+          cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 30, 0.1));
+      }
+    } else {
+      success = cv::findCirclesGrid(
+        img, pattern_size, centers_2d, cv::CALIB_CB_SYMMETRIC_GRID);
+    }
 
     // 显示识别结果
     auto drawing = img.clone();
