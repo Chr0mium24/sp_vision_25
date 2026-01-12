@@ -1,7 +1,6 @@
 #include <chrono>
-#include <csignal>
 #include <cstdio>
-#include <cstdlib>
+#include <cstring>
 #include <fcntl.h>
 #include <thread>
 #include <unistd.h>
@@ -10,7 +9,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <limits>
 #include <vector>
 
 #include <opencv2/opencv.hpp>
@@ -23,32 +21,35 @@ using namespace std::chrono_literals;
 
 namespace
 {
-constexpr uint8_t kFrameHeader = 0xAF;
-constexpr uint8_t kFrameEnd = 0xFA;
-constexpr size_t kVisionTxSize = 10;
-constexpr size_t kVisionRxSize = 13;
+constexpr uint8_t kUsbTxHeader = 0xA5;
+constexpr uint8_t kUsbRxHeader = 0x5A;
+constexpr size_t kUsbTxSize = 48;
+constexpr size_t kUsbRxSize = 28;
 constexpr double kPi = 3.14159265358979323846;
+constexpr uint16_t kCrc16Init = 0xFFFF;
+constexpr uint16_t kCrc16Poly = 0xA001;
 
 struct UiState
 {
   double cmd_yaw_deg = 0.0;
   double cmd_pitch_deg = 0.0;
   double step_deg = 5.0;
-  uint8_t shoot_mode = 0;
-  uint16_t distance = 3000;
-  bool single_pulse = false;
-  std::chrono::steady_clock::time_point single_pulse_until{};
+  float distance_m = 3.0f;
+  bool tracking = true;
+  uint8_t armor_id = 1;
+  uint8_t armors_num = 4;
 };
 
-struct VisionRxFrame
+struct UsbRxFrame
 {
-  int16_t yaw_0p1deg = 0;
-  int16_t pitch_0p1deg = 0;
-  int16_t roll_0p1deg = 0;
-  int16_t shoot_speed = 0;
-  uint8_t color = 0;
-  uint8_t mode = 0;
-  uint8_t checksum = 0;
+  uint8_t detect_color = 0;
+  uint8_t reset_tracker = 0;
+  float roll = 0.0f;
+  float pitch = 0.0f;
+  float yaw = 0.0f;
+  float aim_x = 0.0f;
+  float aim_y = 0.0f;
+  float aim_z = 0.0f;
 };
 
 class TerminalRawMode
@@ -107,30 +108,6 @@ struct KeyEvent
   int ch = 0;
 };
 
-enum class ShootMode : uint8_t
-{
-  Off = 0,
-  Ready = 1,
-  Single = 2,
-  Fire = 3
-};
-
-const char * shoot_mode_name(uint8_t mode)
-{
-  switch (static_cast<ShootMode>(mode)) {
-    case ShootMode::Off:
-      return "off";
-    case ShootMode::Ready:
-      return "ready";
-    case ShootMode::Single:
-      return "single";
-    case ShootMode::Fire:
-      return "fire";
-    default:
-      return "unknown";
-  }
-}
-
 KeyEvent read_key()
 {
   unsigned char c = 0;
@@ -160,103 +137,130 @@ KeyEvent read_key()
   return {Key::Char, static_cast<int>(c)};
 }
 
-int16_t clamp_int16(double value)
+uint16_t crc16_ibm(const uint8_t * data, size_t length)
 {
-  if (value > static_cast<double>(std::numeric_limits<int16_t>::max())) {
-    return std::numeric_limits<int16_t>::max();
+  uint16_t crc = kCrc16Init;
+  for (size_t i = 0; i < length; ++i) {
+    crc ^= data[i];
+    for (int bit = 0; bit < 8; ++bit) {
+      if (crc & 1) {
+        crc = static_cast<uint16_t>((crc >> 1) ^ kCrc16Poly);
+      } else {
+        crc >>= 1;
+      }
+    }
   }
-  if (value < static_cast<double>(std::numeric_limits<int16_t>::min())) {
-    return std::numeric_limits<int16_t>::min();
-  }
-  return static_cast<int16_t>(std::lround(value));
+  return crc;
 }
 
-std::array<uint8_t, kVisionTxSize> build_tx_frame(
-  double yaw_deg, double pitch_deg, uint8_t shoot_mode, uint16_t distance)
+void pack_float(std::array<uint8_t, kUsbTxSize> & buffer, size_t & index, float value)
 {
-  std::array<uint8_t, kVisionTxSize> frame{};
-  int16_t yaw = clamp_int16(yaw_deg * 10.0);
-  int16_t pitch = clamp_int16(pitch_deg * 10.0);
+  std::memcpy(buffer.data() + index, &value, sizeof(float));
+  index += sizeof(float);
+}
 
-  frame[0] = kFrameHeader;
-  frame[1] = static_cast<uint8_t>((yaw >> 8) & 0xFF);
-  frame[2] = static_cast<uint8_t>(yaw & 0xFF);
-  frame[3] = static_cast<uint8_t>((pitch >> 8) & 0xFF);
-  frame[4] = static_cast<uint8_t>(pitch & 0xFF);
-  frame[5] = shoot_mode;
-  frame[6] = static_cast<uint8_t>((distance >> 8) & 0xFF);
-  frame[7] = static_cast<uint8_t>(distance & 0xFF);
+float unpack_float(const uint8_t * data)
+{
+  float value = 0.0f;
+  std::memcpy(&value, data, sizeof(float));
+  return value;
+}
 
-  uint8_t xor_check = 0;
-  for (size_t i = 1; i <= 7; ++i) {
-    xor_check ^= frame[i];
-  }
-  frame[8] = xor_check;
-  frame[9] = kFrameEnd;
+std::array<uint8_t, kUsbTxSize> build_usb_tx_frame(const UiState & ui)
+{
+  std::array<uint8_t, kUsbTxSize> frame{};
+  size_t index = 0;
+  frame[index++] = kUsbTxHeader;
+
+  uint8_t flags = 0;
+  flags |= ui.tracking ? 0x01 : 0x00;
+  flags |= static_cast<uint8_t>((ui.armor_id & 0x07) << 1);
+  flags |= static_cast<uint8_t>((ui.armors_num & 0x07) << 4);
+  frame[index++] = flags;
+
+  double yaw_rad = ui.cmd_yaw_deg * kPi / 180.0;
+  double pitch_rad = ui.cmd_pitch_deg * kPi / 180.0;
+  float horizontal = ui.distance_m * static_cast<float>(std::cos(pitch_rad));
+  float x = -horizontal * static_cast<float>(std::cos(yaw_rad));
+  float y = -horizontal * static_cast<float>(std::sin(yaw_rad));
+  float z = ui.distance_m * static_cast<float>(std::sin(pitch_rad));
+
+  pack_float(frame, index, x);
+  pack_float(frame, index, y);
+  pack_float(frame, index, z);
+  pack_float(frame, index, static_cast<float>(yaw_rad));
+  pack_float(frame, index, 0.0f);
+  pack_float(frame, index, 0.0f);
+  pack_float(frame, index, 0.0f);
+  pack_float(frame, index, 0.0f);
+  pack_float(frame, index, 0.2f);
+  pack_float(frame, index, 0.2f);
+  pack_float(frame, index, 0.0f);
+
+  uint16_t crc = crc16_ibm(frame.data(), kUsbTxSize - 2);
+  frame[index++] = static_cast<uint8_t>(crc & 0xFF);
+  frame[index++] = static_cast<uint8_t>((crc >> 8) & 0xFF);
   return frame;
 }
 
-int16_t unpack_int16(uint8_t high, uint8_t low)
+bool parse_usb_rx_frame(
+  std::vector<uint8_t> & buffer, UsbRxFrame & out, bool & checksum_ok)
 {
-  return static_cast<int16_t>((static_cast<uint16_t>(high) << 8) | low);
-}
+  for (size_t i = 0; i + kUsbRxSize <= buffer.size(); ++i) {
+    if (buffer[i] != kUsbRxHeader) continue;
 
-bool parse_rx_frame(std::vector<uint8_t> & buffer, VisionRxFrame & out)
-{
-  for (size_t i = 0; i + kVisionRxSize <= buffer.size(); ++i) {
-    if (buffer[i] != kFrameHeader) continue;
-    if (buffer[i + kVisionRxSize - 1] != kFrameEnd) continue;
+    uint16_t crc_expected = crc16_ibm(buffer.data() + i, kUsbRxSize - 2);
+    uint16_t crc_got = static_cast<uint16_t>(buffer[i + kUsbRxSize - 2]) |
+                       static_cast<uint16_t>(buffer[i + kUsbRxSize - 1] << 8);
+    checksum_ok = (crc_expected == crc_got);
 
-    uint8_t xor_check = 0;
-    for (size_t j = 1; j <= 10; ++j) {
-      xor_check ^= buffer[i + j];
-    }
-    uint8_t checksum = buffer[i + 11];
-    if (xor_check != checksum) continue;
+    uint8_t flags = buffer[i + 1];
+    out.detect_color = flags & 0x01;
+    out.reset_tracker = (flags >> 1) & 0x01;
+    out.roll = unpack_float(buffer.data() + i + 2);
+    out.pitch = unpack_float(buffer.data() + i + 6);
+    out.yaw = unpack_float(buffer.data() + i + 10);
+    out.aim_x = unpack_float(buffer.data() + i + 14);
+    out.aim_y = unpack_float(buffer.data() + i + 18);
+    out.aim_z = unpack_float(buffer.data() + i + 22);
 
-    out.yaw_0p1deg = unpack_int16(buffer[i + 1], buffer[i + 2]);
-    out.pitch_0p1deg = unpack_int16(buffer[i + 3], buffer[i + 4]);
-    out.roll_0p1deg = unpack_int16(buffer[i + 5], buffer[i + 6]);
-    out.shoot_speed = unpack_int16(buffer[i + 7], buffer[i + 8]);
-    out.color = buffer[i + 9];
-    out.mode = buffer[i + 10];
-    out.checksum = checksum;
-
-    buffer.erase(buffer.begin(), buffer.begin() + i + kVisionRxSize);
+    buffer.erase(buffer.begin(), buffer.begin() + i + kUsbRxSize);
     return true;
   }
 
   if (buffer.size() > 64) {
-    buffer.erase(buffer.begin(), buffer.end() - (kVisionRxSize - 1));
+    buffer.erase(buffer.begin(), buffer.end() - (kUsbRxSize - 1));
   }
   return false;
 }
 
 void print_tui(
-  const UiState & ui, const VisionRxFrame & rx, bool rx_valid, double rx_age_ms, double dt)
+  const UiState & ui, const UsbRxFrame & rx, bool rx_valid, bool checksum_ok, double rx_age_ms,
+  double dt)
 {
   std::fputs("\033[2J\033[H", stdout);
 
-  double rx_yaw = rx.yaw_0p1deg / 10.0;
-  double rx_pitch = rx.pitch_0p1deg / 10.0;
-  double rx_roll = rx.roll_0p1deg / 10.0;
+  double rx_yaw = rx.yaw * 180.0 / kPi;
+  double rx_pitch = rx.pitch * 180.0 / kPi;
+  double rx_roll = rx.roll * 180.0 / kPi;
 
   std::printf(
-    "Hero Gimbal UI Test (Vision protocol)\n"
-    "dt: %.1fms  shoot_mode:%u(%s)  distance:%u  step:%.2fdeg  rx_ok:%d age:%.0fms\n"
+    "Hero Gimbal UI Test (USB auto-aim protocol)\n"
+    "dt: %.1fms  tracking:%d  dist:%.2fm  step:%.2fdeg  rx_ok:%d crc:%d age:%.0fms\n"
     "CMD (deg): yaw:%+.2f  pitch:%+.2f\n"
-    "RX  (deg): yaw:%+.2f  pitch:%+.2f  roll:%+.2f  shoot_speed:%d  color:%u  mode:%u\n"
+    "RX  (deg): yaw:%+.2f  pitch:%+.2f  roll:%+.2f  color:%u reset:%u\n"
+    "RX  (m):   aim_x:%+.2f  aim_y:%+.2f  aim_z:%+.2f\n"
     "\n"
     "Keys: q quit | w/s or Up/Down pitch +/- | a/d or Left/Right yaw -/+ | [/] step | 0 reset\n"
-    "      1 off 2 ready 3 single 4 fire | f toggle fire | space single pulse | ,/. distance -/+100\n",
-    dt * 1e3, ui.shoot_mode, shoot_mode_name(ui.shoot_mode), ui.distance, ui.step_deg,
-    rx_valid ? 1 : 0, rx_age_ms, ui.cmd_yaw_deg, ui.cmd_pitch_deg, rx_yaw, rx_pitch, rx_roll,
-    static_cast<int>(rx.shoot_speed), rx.color, rx.mode);
+    "      c tracking | ,/. dist -/+0.1m\n",
+    dt * 1e3, ui.tracking ? 1 : 0, ui.distance_m, ui.step_deg, rx_valid ? 1 : 0,
+    checksum_ok ? 1 : 0, rx_age_ms, ui.cmd_yaw_deg, ui.cmd_pitch_deg, rx_yaw, rx_pitch, rx_roll,
+    rx.detect_color, rx.reset_tracker, rx.aim_x, rx.aim_y, rx.aim_z);
   std::fflush(stdout);
 }
 
 void draw_gauges(
-  cv::Mat & canvas, double yaw_deg, double pitch_deg, bool rx_ok, bool shoot_ready, bool shoot_fire)
+  cv::Mat & canvas, double yaw_deg, double pitch_deg, bool rx_ok, bool tracking)
 {
   canvas.setTo(cv::Scalar(15, 15, 18));
 
@@ -292,8 +296,8 @@ void draw_gauges(
   draw_dial({720, 280}, 160, pitch_deg, accent);
 
   cv::circle(canvas, {80, 60}, 14, rx_ok ? ok : dim, -1, cv::LINE_AA);
-  cv::circle(canvas, {120, 60}, 14, shoot_ready ? ok : dim, -1, cv::LINE_AA);
-  cv::circle(canvas, {160, 60}, 14, shoot_fire ? warn : dim, -1, cv::LINE_AA);
+  cv::circle(canvas, {120, 60}, 14, tracking ? ok : dim, -1, cv::LINE_AA);
+  cv::circle(canvas, {160, 60}, 14, tracking ? warn : dim, -1, cv::LINE_AA);
 }
 
 }  // namespace
@@ -339,8 +343,9 @@ int main(int argc, char * argv[])
   terminal.enable();
 
   std::vector<uint8_t> rx_buffer;
-  VisionRxFrame rx{};
+  UsbRxFrame rx{};
   bool has_rx = false;
+  bool checksum_ok = false;
   auto last_rx = std::chrono::steady_clock::now();
   auto last_loop = std::chrono::steady_clock::now();
 
@@ -349,10 +354,6 @@ int main(int argc, char * argv[])
     auto dt = tools::delta_time(now, last_loop);
     last_loop = now;
 
-    if (ui.single_pulse && now >= ui.single_pulse_until) {
-      ui.single_pulse = false;
-    }
-
     size_t avail = serial.available();
     if (avail > 0) {
       std::vector<uint8_t> chunk(avail);
@@ -360,18 +361,16 @@ int main(int argc, char * argv[])
       rx_buffer.insert(rx_buffer.end(), chunk.begin(), chunk.begin() + got);
     }
 
-    while (parse_rx_frame(rx_buffer, rx)) {
+    while (parse_usb_rx_frame(rx_buffer, rx, checksum_ok)) {
       has_rx = true;
       last_rx = now;
     }
 
-    uint8_t shoot_mode = ui.shoot_mode;
-    if (ui.single_pulse) shoot_mode = static_cast<uint8_t>(ShootMode::Single);
-    auto frame = build_tx_frame(ui.cmd_yaw_deg, ui.cmd_pitch_deg, shoot_mode, ui.distance);
+    auto frame = build_usb_tx_frame(ui);
     serial.write(frame.data(), frame.size());
 
     double rx_age_ms = has_rx ? tools::delta_time(now, last_rx) * 1e3 : -1.0;
-    print_tui(ui, rx, has_rx, rx_age_ms, dt);
+    print_tui(ui, rx, has_rx, checksum_ok, rx_age_ms, dt);
 
     int key = -1;
     auto ev = read_key();
@@ -384,34 +383,17 @@ int main(int argc, char * argv[])
 
     if (use_gui) {
       cv::Mat canvas(560, 980, CV_8UC3);
-      double rx_yaw = has_rx ? (rx.yaw_0p1deg / 10.0) : 0.0;
-      double rx_pitch = has_rx ? (rx.pitch_0p1deg / 10.0) : 0.0;
+      double rx_yaw = has_rx ? (rx.yaw * 180.0 / kPi) : 0.0;
+      double rx_pitch = has_rx ? (rx.pitch * 180.0 / kPi) : 0.0;
       bool rx_ok = has_rx && (tools::delta_time(now, last_rx) < 0.3);
-      bool ready_on = (shoot_mode == static_cast<uint8_t>(ShootMode::Ready)) ||
-                      (shoot_mode == static_cast<uint8_t>(ShootMode::Single)) ||
-                      (shoot_mode == static_cast<uint8_t>(ShootMode::Fire));
-      bool fire_on = shoot_mode == static_cast<uint8_t>(ShootMode::Fire);
-      draw_gauges(canvas, rx_yaw, rx_pitch, rx_ok, ready_on, fire_on);
+      draw_gauges(canvas, rx_yaw, rx_pitch, rx_ok, ui.tracking);
       cv::imshow("Hero Gimbal UI Test", canvas);
       int gui_key = cv::waitKey(1);
       if (gui_key != -1) key = gui_key;
     }
 
     if (key == 'q') break;
-    if (key == '1') ui.shoot_mode = static_cast<uint8_t>(ShootMode::Off);
-    if (key == '2') ui.shoot_mode = static_cast<uint8_t>(ShootMode::Ready);
-    if (key == '3') ui.shoot_mode = static_cast<uint8_t>(ShootMode::Single);
-    if (key == '4') ui.shoot_mode = static_cast<uint8_t>(ShootMode::Fire);
-    if (key == 'f') {
-      ui.shoot_mode =
-        (ui.shoot_mode == static_cast<uint8_t>(ShootMode::Fire)) ?
-        static_cast<uint8_t>(ShootMode::Off) :
-        static_cast<uint8_t>(ShootMode::Fire);
-    }
-    if (key == ' ') {
-      ui.single_pulse = true;
-      ui.single_pulse_until = now + 120ms;
-    }
+    if (key == 'c') ui.tracking = !ui.tracking;
     if (key == '0') {
       ui.cmd_yaw_deg = 0.0;
       ui.cmd_pitch_deg = 0.0;
@@ -421,10 +403,10 @@ int main(int argc, char * argv[])
     if (key == ']') ui.step_deg = std::min(10.0, ui.step_deg + 0.05);
 
     if (key == ',') {
-      ui.distance = static_cast<uint16_t>(std::max(0, static_cast<int>(ui.distance) - 100));
+      ui.distance_m = std::max(0.1f, ui.distance_m - 0.1f);
     }
     if (key == '.') {
-      ui.distance = static_cast<uint16_t>(std::min(65535, static_cast<int>(ui.distance) + 100));
+      ui.distance_m = std::min(50.0f, ui.distance_m + 0.1f);
     }
 
     double step_deg = ui.step_deg;
@@ -436,7 +418,10 @@ int main(int argc, char * argv[])
     std::this_thread::sleep_for(5ms);
   }
 
-  auto stop = build_tx_frame(0.0, 0.0, static_cast<uint8_t>(ShootMode::Off), 0);
+  UiState stop_state{};
+  stop_state.tracking = false;
+  stop_state.distance_m = 0.0f;
+  auto stop = build_usb_tx_frame(stop_state);
   serial.write(stop.data(), stop.size());
   return 0;
 }
