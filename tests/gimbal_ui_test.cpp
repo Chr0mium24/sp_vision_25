@@ -23,13 +23,13 @@ struct UiState
 {
   bool tracking = true;
   bool fric_on = true;
-  bool fire_hold = false;
   bool fire_pulse = false;
   std::chrono::steady_clock::time_point fire_pulse_until{};
+  uint8_t fire_mode = 0;
 
   double cmd_yaw = 0.0;    // rad
   double cmd_pitch = 0.0;  // rad
-  double step_deg = 1.0;
+  double step_deg = 5.0;
 };
 
 class TerminalRawMode
@@ -88,6 +88,30 @@ struct KeyEvent
   int ch = 0;  // valid when key == Char
 };
 
+enum class FireMode : uint8_t
+{
+  Off = 0,
+  Ready = 1,
+  Single = 2,
+  Fire = 3
+};
+
+const char * fire_mode_name(uint8_t mode)
+{
+  switch (static_cast<FireMode>(mode)) {
+    case FireMode::Off:
+      return "off";
+    case FireMode::Ready:
+      return "ready";
+    case FireMode::Single:
+      return "single";
+    case FireMode::Fire:
+      return "fire";
+    default:
+      return "unknown";
+  }
+}
+
 KeyEvent read_key()
 {
   unsigned char c = 0;
@@ -124,21 +148,23 @@ void print_tui(const UiState & ui, const io::GimbalState & gs, const Eigen::Vect
 
   std::printf(
     "Gimbal UI Test (TUI fallback)\n"
-    "dt: %.1fms  tracking:%d  fric:%d  fire_hold:%d  fire:%d  step:%.2fdeg\n"
+    "dt: %.1fms  tracking:%d  fric:%d  fire_mode:%u(%s)  pulse:%d  step:%.2fdeg\n"
     "CMD (deg): yaw:%+.2f  pitch:%+.2f\n"
     "FB  (deg): yaw:%+.2f  pitch:%+.2f  roll:%+.2f   (from q(t))\n"
     "FB  (rad): yaw:%+.3f  pitch:%+.3f  roll:%+.3f  yaw_odom:%+.3f  pitch_odom:%+.3f\n"
     "VEL (rad/s): yaw_vel:%+.3f  pitch_vel:%+.3f  bullet_speed:%.2f  bullet_count:%u  robot_id:%d\n"
     "\n"
-    "Keys: q quit | w/s or Up/Down pitch +/- | a/d or Left/Right yaw -/+ | [/] step | 0 reset | c tracking | r fric | f fire_hold | space pulse\n",
-    dt * 1e3, ui.tracking ? 1 : 0, ui.fric_on ? 1 : 0, ui.fire_hold ? 1 : 0,
-    (ui.fire_hold || ui.fire_pulse) ? 1 : 0, ui.step_deg, ui.cmd_yaw * 57.3, ui.cmd_pitch * 57.3,
+    "Keys: q quit | w/s or Up/Down pitch +/- | a/d or Left/Right yaw -/+ | [/] step | 0 reset | c tracking | r fric | 1 off 2 ready 3 single 4 fire | f toggle fire | space single pulse\n",
+    dt * 1e3, ui.tracking ? 1 : 0, ui.fric_on ? 1 : 0, ui.fire_mode,
+    fire_mode_name(ui.fire_mode), ui.fire_pulse ? 1 : 0, ui.step_deg, ui.cmd_yaw * 57.3,
+    ui.cmd_pitch * 57.3,
     ypr_deg[0], ypr_deg[1], ypr_deg[2], gs.yaw, gs.pitch, gs.roll, gs.yaw_odom, gs.pitch_odom,
     gs.yaw_vel, gs.pitch_vel, gs.bullet_speed, gs.bullet_count, static_cast<int>(gs.robot_id));
   std::fflush(stdout);
 }
 
-void draw_gauges(cv::Mat & canvas, double yaw_deg, double pitch_deg, bool tracking, bool fric, bool fire)
+void draw_gauges(
+  cv::Mat & canvas, double yaw_deg, double pitch_deg, bool tracking, bool fric, bool fire)
 {
   canvas.setTo(cv::Scalar(15, 15, 18));
 
@@ -231,7 +257,9 @@ int main(int argc, char * argv[])
     plan.tracking = ui.tracking ? 1 : 0;
     plan.yaw = static_cast<float>(ui.cmd_yaw);
     plan.pitch = static_cast<float>(ui.cmd_pitch);
-    plan.fire = (ui.fire_hold || ui.fire_pulse) ? 1 : 0;
+    uint8_t fire_cmd = ui.fire_mode;
+    if (ui.fire_pulse) fire_cmd = static_cast<uint8_t>(FireMode::Single);
+    plan.fire = fire_cmd;
     plan.fric_on = ui.fric_on ? 1 : 0;
     gimbal.send(plan);
 
@@ -248,8 +276,10 @@ int main(int argc, char * argv[])
 
     if (use_gui) {
       cv::Mat canvas(560, 980, CV_8UC3);
+      bool fire_active = (fire_cmd == static_cast<uint8_t>(FireMode::Single)) ||
+                         (fire_cmd == static_cast<uint8_t>(FireMode::Fire));
       draw_gauges(
-        canvas, ypr[0], ypr[1], ui.tracking, ui.fric_on, (ui.fire_hold || ui.fire_pulse));
+        canvas, ypr[0], ypr[1], ui.tracking, ui.fric_on, fire_active);
       cv::imshow("Gimbal UI Test", canvas);
       int gui_key = cv::waitKey(1);
       if (gui_key != -1) key = gui_key;
@@ -258,7 +288,16 @@ int main(int argc, char * argv[])
     if (key == 'q') break;
     if (key == 'c') ui.tracking = !ui.tracking;
     if (key == 'r') ui.fric_on = !ui.fric_on;
-    if (key == 'f') ui.fire_hold = !ui.fire_hold;
+    if (key == '1') ui.fire_mode = static_cast<uint8_t>(FireMode::Off);
+    if (key == '2') ui.fire_mode = static_cast<uint8_t>(FireMode::Ready);
+    if (key == '3') ui.fire_mode = static_cast<uint8_t>(FireMode::Single);
+    if (key == '4') ui.fire_mode = static_cast<uint8_t>(FireMode::Fire);
+    if (key == 'f') {
+      ui.fire_mode =
+        (ui.fire_mode == static_cast<uint8_t>(FireMode::Fire)) ?
+        static_cast<uint8_t>(FireMode::Off) :
+        static_cast<uint8_t>(FireMode::Fire);
+    }
     if (key == ' ') {
       ui.fire_pulse = true;
       ui.fire_pulse_until = now + 120ms;
