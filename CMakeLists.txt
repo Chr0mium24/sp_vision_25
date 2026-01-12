@@ -115,6 +115,9 @@ target_link_libraries(gimbal_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 add_executable(hero_gimbal_ui_test tests/hero_gimbal_ui_test.cpp)
 target_link_libraries(hero_gimbal_ui_test ${OpenCV_LIBS} fmt::fmt tools io)
 
+add_executable(usb_aim_rx_test tests/usb_aim_rx_test.cpp)
+target_link_libraries(usb_aim_rx_test ${OpenCV_LIBS} fmt::fmt tools io)
+
 # 检查 ROS 环境
 find_package(ament_cmake QUIET)
 find_package(rclcpp QUIET)
