@@ -77,6 +77,8 @@ add_executable(usbcamera_test tests/usbcamera_test.cpp)
 add_executable(handeye_test tests/handeye_test.cpp)
 add_executable(dm_test tests/dm_test.cpp)
 add_executable(minimum_vision_system tests/minimum_vision_system.cpp)
+add_executable(auto_aim_ui_test tests/auto_aim_ui_test.cpp)
+add_executable(auto_aim_ui_tune tests/auto_aim_ui_tune.cpp)
 
 
 target_link_libraries(auto_aim_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
@@ -95,6 +97,8 @@ target_link_libraries(usbcamera_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 target_link_libraries(handeye_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 target_link_libraries(dm_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 target_link_libraries(minimum_vision_system ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
+target_link_libraries(auto_aim_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
+target_link_libraries(auto_aim_ui_tune ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 
 
 add_executable(gimbal_test tests/gimbal_test.cpp)
