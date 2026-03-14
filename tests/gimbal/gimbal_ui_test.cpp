@@ -265,7 +265,9 @@ const std::string keys =
   "{fire-mode      | 0 | 初始fire_mode: 0(off)/1(ready)/2(single)/3(fire) }"
   "{yaw-deg        | 0 | 初始控制yaw角(度) }"
   "{pitch-deg      | 0 | 初始控制pitch角(度) }"
-  "{step-deg       | 5 | 键控步进角(度) }";
+  "{step-deg       | 5 | 键控步进角(度) }"
+  "{align-to-feedback | true | control模式下默认先对齐当前姿态后再发控制(更安全) }"
+  "{log-csv        |      | 输出CSV日志路径(记录命令/反馈/RX统计) }";
 
 int main(int argc, char * argv[])
 {
@@ -278,6 +280,8 @@ int main(int argc, char * argv[])
   int duration_ms = std::max(0, cli.get<int>("duration-ms"));
   int loop_ms = std::max(1, cli.get<int>("loop-ms"));
   bool no_input = cli.get<bool>("no-input");
+  bool align_to_feedback = cli.get<bool>("align-to-feedback");
+  auto log_csv = cli.get<std::string>("log-csv");
   auto mode_str = cli.get<std::string>("mode");
   if (cli.has("help") || config_path.empty()) {
     cli.printMessage();
@@ -300,6 +304,20 @@ int main(int argc, char * argv[])
   ui.cmd_yaw = cli.get<double>("yaw-deg") / 57.3;
   ui.cmd_pitch = cli.get<double>("pitch-deg") / 57.3;
   ui.step_deg = std::clamp(cli.get<double>("step-deg"), 0.01, 15.0);
+  bool seed_yaw_from_feedback = align_to_feedback && !cli.has("yaw-deg");
+  bool seed_pitch_from_feedback = align_to_feedback && !cli.has("pitch-deg");
+
+  std::FILE * log_fp = nullptr;
+  if (!log_csv.empty()) {
+    log_fp = std::fopen(log_csv.c_str(), "w");
+    if (!log_fp) {
+      std::fprintf(stderr, "failed to open --log-csv: %s\n", log_csv.c_str());
+    } else {
+      std::fprintf(
+        log_fp,
+        "t_s,dt_ms,mode,cmd_tracking,cmd_fric,cmd_fire,cmd_yaw_rad,cmd_pitch_rad,fb_yaw_rad,fb_pitch_rad,fb_roll_rad,fb_yaw_deg,fb_pitch_deg,good,crc_fail,short_read,bad_header,reconnect,consec_crc,age_ms\n");
+    }
+  }
 
   if (dump_once) {
     auto t0 = std::chrono::steady_clock::now();
@@ -370,20 +388,54 @@ int main(int argc, char * argv[])
       ypr = tools::eulers(q, 2, 1, 0) * 57.3;
     }
 
+    if ((seed_yaw_from_feedback || seed_pitch_from_feedback) && gimbal.has_valid_q()) {
+      if (seed_yaw_from_feedback) ui.cmd_yaw = gs.yaw;
+      if (seed_pitch_from_feedback) ui.cmd_pitch = gs.pitch;
+      seed_yaw_from_feedback = false;
+      seed_pitch_from_feedback = false;
+    }
+
     if (ui.fire_pulse && now >= ui.fire_pulse_until) ui.fire_pulse = false;
 
     uint8_t fire_cmd = ui.fire_mode;
     if (ui.fire_pulse) fire_cmd = static_cast<uint8_t>(FireMode::Single);
+    uint8_t sent_tracking = 0;
+    uint8_t sent_fric = 0;
+    uint8_t sent_fire = 0;
+    float sent_yaw = 0.0f;
+    float sent_pitch = 0.0f;
 
     if (run_mode == RunMode::Control) {
+      bool waiting_seed = seed_yaw_from_feedback || seed_pitch_from_feedback;
       io::VisionToGimbal plan{};
-      plan.tracking = ui.tracking ? 1 : 0;
+      plan.tracking = waiting_seed ? 0 : (ui.tracking ? 1 : 0);
       plan.yaw = static_cast<float>(ui.cmd_yaw);
       plan.pitch = static_cast<float>(ui.cmd_pitch);
-      plan.fire = fire_cmd;
-      plan.fric_on = ui.fric_on ? 1 : 0;
+      plan.fire = waiting_seed ? 0 : fire_cmd;
+      plan.fric_on = waiting_seed ? 0 : (ui.fric_on ? 1 : 0);
       gimbal.send(plan);
+      sent_tracking = plan.tracking;
+      sent_fric = plan.fric_on;
+      sent_fire = plan.fire;
+      sent_yaw = plan.yaw;
+      sent_pitch = plan.pitch;
       control_sent = true;
+    }
+
+    if (log_fp) {
+      double age_ms = rx.good_frames == 0 ? -1.0 : tools::delta_time(now, rx.last_good_frame_time) * 1e3;
+      std::fprintf(
+        log_fp,
+        "%.6f,%.3f,%s,%u,%u,%u,%.6f,%.6f,%.6f,%.6f,%.6f,%.3f,%.3f,%llu,%llu,%llu,%llu,%llu,%llu,%.1f\n",
+        tools::delta_time(now, start_t), dt * 1e3, run_mode_name(run_mode), sent_tracking, sent_fric,
+        sent_fire, sent_yaw, sent_pitch, gs.yaw, gs.pitch, gs.roll, ypr[0], ypr[1],
+        static_cast<unsigned long long>(rx.good_frames),
+        static_cast<unsigned long long>(rx.crc_fail),
+        static_cast<unsigned long long>(rx.short_read),
+        static_cast<unsigned long long>(rx.header_mismatch),
+        static_cast<unsigned long long>(rx.reconnect_count),
+        static_cast<unsigned long long>(rx.consecutive_crc_fail), age_ms);
+      std::fflush(log_fp);
     }
 
     print_tui(ui, gs, rx, ypr, dt, run_mode);
@@ -456,6 +508,10 @@ int main(int argc, char * argv[])
     stop.fire = 0;
     stop.fric_on = 0;
     gimbal.send(stop);
+  }
+
+  if (log_fp) {
+    std::fclose(log_fp);
   }
 
   return 0;
