@@ -2,13 +2,11 @@
 
 #include <chrono>
 #include <fstream>
+#include <utility>
 #include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "tasks/auto_aim/aimer.hpp"
-#include "tasks/auto_aim/solver.hpp"
-#include "tasks/auto_aim/tracker.hpp"
-#include "tasks/auto_aim/yolo.hpp"
+#include "tasks/auto_aim/auto_aim_runtime.hpp"
 #include "tools/exiter.hpp"
 #include "tools/img_tools.hpp"
 #include "tools/logger.hpp"
@@ -43,10 +41,9 @@ int main(int argc, char * argv[])
   cv::VideoCapture video(video_path);
   std::ifstream text(text_path);
 
-  auto_aim::YOLO yolo(config_path);
-  auto_aim::Solver solver(config_path);
-  auto_aim::Tracker tracker(config_path, solver);
-  auto_aim::Aimer aimer(config_path);
+  auto_aim::Runtime runtime(config_path, true);
+  auto & solver = runtime.solver();
+  auto & aimer = runtime.aimer();
 
   cv::Mat img, drawing;
   auto t0 = std::chrono::steady_clock::now();
@@ -73,16 +70,11 @@ int main(int argc, char * argv[])
 
     /// 自瞄核心逻辑
 
-    solver.set_R_gimbal2world({w, x, y, z});
-
-    auto yolo_start = std::chrono::steady_clock::now();
-    auto armors = yolo.detect(img, frame_count);
-
-    auto tracker_start = std::chrono::steady_clock::now();
-    auto targets = tracker.track(armors, timestamp);
-
-    auto aimer_start = std::chrono::steady_clock::now();
-    auto command = aimer.aim(targets, timestamp, 27, false);
+    auto output = runtime.step(
+      {img, timestamp, {w, x, y, z}, 27.0, frame_count, true, false});
+    auto armors = std::move(output.armors);
+    auto targets = std::move(output.targets);
+    auto command = output.command;
 
     if (
       !targets.empty() && aimer.debug_aim_point.valid &&
@@ -91,13 +83,6 @@ int main(int argc, char * argv[])
 
     if (command.control) last_command = command;
     /// 调试输出
-
-    auto finish = std::chrono::steady_clock::now();
-    tools::logger()->info(
-      "[{}] yolo: {:.1f}ms, tracker: {:.1f}ms, aimer: {:.1f}ms", frame_count,
-      tools::delta_time(tracker_start, yolo_start) * 1e3,
-      tools::delta_time(aimer_start, tracker_start) * 1e3,
-      tools::delta_time(finish, aimer_start) * 1e3);
 
     tools::draw_text(
       img,

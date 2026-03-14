@@ -1,25 +1,11 @@
-#include <fmt/core.h>
-
 #include <chrono>
-#include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>
 
 #include "io/camera.hpp"
 #include "io/gimbal/gimbal.hpp"
-#include "tasks/auto_aim/aimer.hpp"
-#include "tasks/auto_aim/multithread/commandgener.hpp"
-#include "tasks/auto_aim/shooter.hpp"
-#include "tasks/auto_aim/solver.hpp"
-#include "tasks/auto_aim/tracker.hpp"
-#include "tasks/auto_aim/yolo.hpp"
+#include "tasks/auto_aim/auto_aim_runtime.hpp"
 #include "tools/exiter.hpp"
-#include "tools/img_tools.hpp"
 #include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
-#include "tools/plotter.hpp"
-#include "tools/recorder.hpp"
-
-using namespace std::chrono;
 
 const std::string keys =
   "{help h usage ? |      | 输出命令行参数说明}"
@@ -35,20 +21,12 @@ int main(int argc, char * argv[])
   }
 
   tools::Exiter exiter;
-  tools::Plotter plotter;
-  tools::Recorder recorder;
 
   io::Gimbal gimbal(config_path);
   io::Camera camera(config_path);
-
-  auto_aim::YOLO detector(config_path, false);
-  auto_aim::Solver solver(config_path);
-  auto_aim::Tracker tracker(config_path, solver);
-  auto_aim::Aimer aimer(config_path);
-  auto_aim::Shooter shooter(config_path);
+  auto_aim::Runtime runtime(config_path, false);
 
   cv::Mat img;
-  Eigen::Quaterniond q;
   std::chrono::steady_clock::time_point t;
 
   auto mode = io::GimbalMode::IDLE;
@@ -56,7 +34,9 @@ int main(int argc, char * argv[])
 
   while (!exiter.exit()) {
     camera.read(img, t);
-    q = gimbal.q(t - 1ms);
+    if (img.empty()) continue;
+
+    auto q = gimbal.q(t - std::chrono::milliseconds(1));
     mode = gimbal.mode();
 
     if (last_mode != mode) {
@@ -64,17 +44,8 @@ int main(int argc, char * argv[])
       last_mode = mode;
     }
 
-    // recorder.record(img, q, t);
-
-    solver.set_R_gimbal2world(q);
-
-    Eigen::Vector3d ypr = tools::eulers(solver.R_gimbal2world(), 2, 1, 0);
-
-    auto armors = detector.detect(img);
-
-    auto targets = tracker.track(armors, t);
-
-    auto command = aimer.aim(targets, t, 25.0);
+    auto output = runtime.step({img, t, q, 25.0});
+    auto command = output.command;
 
     gimbal.send(
       command.control, command.shoot, static_cast<float>(command.yaw), 0, 0,

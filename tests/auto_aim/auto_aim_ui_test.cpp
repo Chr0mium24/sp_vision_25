@@ -12,10 +12,7 @@
 
 #include "io/camera.hpp"
 #include "io/gimbal/gimbal.hpp"
-#include "tasks/auto_aim/aimer.hpp"
-#include "tasks/auto_aim/solver.hpp"
-#include "tasks/auto_aim/tracker.hpp"
-#include "tasks/auto_aim/yolo.hpp"
+#include "tasks/auto_aim/auto_aim_runtime.hpp"
 #include "tools/exiter.hpp"
 #include "tools/img_tools.hpp"
 #include "tools/math_tools.hpp"
@@ -194,11 +191,9 @@ int main(int argc, char * argv[])
 
   io::Gimbal gimbal(config_path);
   io::Camera camera(config_path);
-
-  auto_aim::YOLO detector(config_path, false);
-  auto_aim::Solver solver(config_path);
-  auto_aim::Tracker tracker(config_path, solver);
-  auto_aim::Aimer aimer(config_path);
+  auto_aim::Runtime runtime(config_path, false);
+  auto & solver = runtime.solver();
+  auto & aimer = runtime.aimer();
 
   UiState ui;
   TerminalRawMode terminal;
@@ -228,11 +223,10 @@ int main(int argc, char * argv[])
 
     auto gs = gimbal.state();
     auto q = gimbal.q(t - 1ms);
-    solver.set_R_gimbal2world(q);
-
-    auto armors = detector.detect(img);
-    auto targets = tracker.track(armors, t);
-    auto command = aimer.aim(targets, t, ui.bullet_speed);
+    auto output = runtime.step({img, t, q, ui.bullet_speed});
+    const auto & targets = output.targets;
+    const auto & command = output.command;
+    const auto & tracker_state = output.tracker_state;
 
     double yaw_offset = ui.yaw_offset_deg / 57.3;
     double pitch_offset = ui.pitch_offset_deg / 57.3;
@@ -253,7 +247,7 @@ int main(int argc, char * argv[])
     gimbal.send(plan);
 
     Eigen::Vector3d ypr_deg = tools::eulers(q, 2, 1, 0) * 57.3;
-    print_tui(ui, gs, ypr_deg, command, targets.size(), tracker.state(), dt);
+    print_tui(ui, gs, ypr_deg, command, targets.size(), tracker_state, dt);
 
     int key = -1;
     auto ev = read_key();
@@ -267,7 +261,7 @@ int main(int argc, char * argv[])
     if (use_gui) {
       if (!targets.empty()) {
         auto target = targets.front();
-        tools::draw_text(img, fmt::format("[{}]", tracker.state()), {10, 30}, {255, 255, 255});
+        tools::draw_text(img, fmt::format("[{}]", tracker_state), {10, 30}, {255, 255, 255});
 
         for (const auto & xyza : target.armor_xyza_list()) {
           auto image_points =
