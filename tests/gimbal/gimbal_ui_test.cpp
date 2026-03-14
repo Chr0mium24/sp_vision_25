@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <fcntl.h>
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <thread>
 #include <unistd.h>
@@ -252,6 +253,8 @@ const std::string keys =
   "{help h usage ? |      | 输出命令行参数说明}"
   "{@config-path   |      | 位置参数，yaml配置文件路径 }"
   "{nogui          | false| 强制不使用OpenCV窗口(TUI模式)}"
+  "{dump-once      | false| 单次输出当前姿态与RX统计后退出}"
+  "{wait-valid-ms  | 1500 | dump-once等待有效帧超时(ms)}"
   "{mode           | control | 运行模式: read/control }"
   "{once           | false | 只运行一次循环后退出 }"
   "{duration-ms    | 0 | 运行时长(ms), 0为无限 }"
@@ -269,6 +272,8 @@ int main(int argc, char * argv[])
   cv::CommandLineParser cli(argc, argv, keys);
   auto config_path = cli.get<std::string>(0);
   bool nogui = cli.get<bool>("nogui");
+  bool dump_once = cli.get<bool>("dump-once");
+  int wait_valid_ms = std::max(0, cli.get<int>("wait-valid-ms"));
   bool once = cli.get<bool>("once");
   int duration_ms = std::max(0, cli.get<int>("duration-ms"));
   int loop_ms = std::max(1, cli.get<int>("loop-ms"));
@@ -295,6 +300,43 @@ int main(int argc, char * argv[])
   ui.cmd_yaw = cli.get<double>("yaw-deg") / 57.3;
   ui.cmd_pitch = cli.get<double>("pitch-deg") / 57.3;
   ui.step_deg = std::clamp(cli.get<double>("step-deg"), 0.01, 15.0);
+
+  if (dump_once) {
+    auto t0 = std::chrono::steady_clock::now();
+    while (!exiter.exit()) {
+      if (gimbal.has_valid_q()) break;
+      auto dt_ms =
+        static_cast<int>(tools::delta_time(std::chrono::steady_clock::now(), t0) * 1e3);
+      if (dt_ms >= wait_valid_ms) break;
+      std::this_thread::sleep_for(2ms);
+    }
+
+    auto gs = gimbal.state();
+    auto rx = gimbal.rx_stats();
+    auto age_ms = rx.good_frames == 0
+                    ? -1
+                    : static_cast<int>(
+                        tools::delta_time(std::chrono::steady_clock::now(), rx.last_good_frame_time) *
+                        1e3);
+    if (!gimbal.has_valid_q()) {
+      gs.pitch = std::numeric_limits<float>::quiet_NaN();
+      gs.yaw = std::numeric_limits<float>::quiet_NaN();
+      gs.roll = std::numeric_limits<float>::quiet_NaN();
+      gs.yaw_odom = std::numeric_limits<float>::quiet_NaN();
+      gs.pitch_odom = std::numeric_limits<float>::quiet_NaN();
+    }
+
+    std::printf(
+      "snapshot valid=%d pitch=%.6f yaw=%.6f roll=%.6f yaw_odom=%.6f pitch_odom=%.6f age_ms=%d good=%llu crc_fail=%llu short_read=%llu bad_header=%llu reconnect=%llu consec_crc=%llu last_crc_rx=0x%04X last_crc_calc=0x%04X\n",
+      gimbal.has_valid_q() ? 1 : 0, gs.pitch, gs.yaw, gs.roll, gs.yaw_odom, gs.pitch_odom, age_ms,
+      static_cast<unsigned long long>(rx.good_frames), static_cast<unsigned long long>(rx.crc_fail),
+      static_cast<unsigned long long>(rx.short_read),
+      static_cast<unsigned long long>(rx.header_mismatch),
+      static_cast<unsigned long long>(rx.reconnect_count),
+      static_cast<unsigned long long>(rx.consecutive_crc_fail), rx.last_rx_crc, rx.last_calc_crc);
+    std::fflush(stdout);
+    return 0;
+  }
 
   bool use_gui = !nogui;
   if (use_gui) {

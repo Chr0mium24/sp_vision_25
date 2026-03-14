@@ -119,6 +119,9 @@ target_link_libraries(hero_gimbal_ui_test ${OpenCV_LIBS} fmt::fmt tools io)
 add_executable(usb_aim_rx_test tests/gimbal/usb_aim_rx_test.cpp)
 target_link_libraries(usb_aim_rx_test ${OpenCV_LIBS} fmt::fmt tools io)
 
+add_executable(gimbal_serial_probe tests/gimbal/gimbal_serial_probe.cpp)
+target_link_libraries(gimbal_serial_probe ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
+
 function(set_test_output target group)
     set_target_properties(${target} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/tests/${group}"
@@ -148,6 +151,7 @@ set_test_output(gimbal_response_test gimbal)
 set_test_output(gimbal_ui_test gimbal)
 set_test_output(hero_gimbal_ui_test gimbal)
 set_test_output(usb_aim_rx_test gimbal)
+set_test_output(gimbal_serial_probe gimbal)
 
 set_test_output(planner_test planner)
 set_test_output(planner_test_offline planner)

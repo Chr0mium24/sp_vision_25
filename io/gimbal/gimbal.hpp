@@ -61,16 +61,16 @@ enum class GimbalMode
 
 struct GimbalState
 {
-  float yaw;
-  float yaw_vel;
-  float pitch;
-  float pitch_vel;
-  float roll;
-  float yaw_odom;
-  float pitch_odom;
-  float bullet_speed;
-  uint16_t bullet_count;
-  uint8_t robot_id;
+  float yaw = 0.0f;
+  float yaw_vel = 0.0f;
+  float pitch = 0.0f;
+  float pitch_vel = 0.0f;
+  float roll = 0.0f;
+  float yaw_odom = 0.0f;
+  float pitch_odom = 0.0f;
+  float bullet_speed = 0.0f;
+  uint16_t bullet_count = 0;
+  uint8_t robot_id = 0;
 };
 
 struct GimbalRxStats
@@ -114,8 +114,8 @@ private:
   std::atomic<bool> quit_ = false;
   mutable std::mutex mutex_;
 
-  GimbalToVision rx_data_;
-  VisionToGimbal tx_data_;
+  GimbalToVision rx_data_{};
+  VisionToGimbal tx_data_{};
 
   GimbalMode mode_ = GimbalMode::IDLE;
   GimbalState state_;
