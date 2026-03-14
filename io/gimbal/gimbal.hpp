@@ -4,6 +4,7 @@
 #include <Eigen/Geometry>
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -72,15 +73,31 @@ struct GimbalState
   uint8_t robot_id;
 };
 
+struct GimbalRxStats
+{
+  uint64_t good_frames = 0;
+  uint64_t crc_fail = 0;
+  uint64_t short_read = 0;
+  uint64_t header_mismatch = 0;
+  uint64_t reconnect_count = 0;
+  uint64_t consecutive_crc_fail = 0;
+  uint8_t last_header = 0;
+  uint16_t last_rx_crc = 0;
+  uint16_t last_calc_crc = 0;
+  std::chrono::steady_clock::time_point last_good_frame_time{};
+};
+
 class Gimbal
 {
 public:
-  Gimbal(const std::string & config_path);
+  explicit Gimbal(const std::string & config_path, bool wait_for_first_q = true);
 
   ~Gimbal();
 
   GimbalMode mode() const;
   GimbalState state() const;
+  GimbalRxStats rx_stats() const;
+  bool has_valid_q() const;
   std::string str(GimbalMode mode) const;
   Eigen::Quaterniond q(std::chrono::steady_clock::time_point t);
 
@@ -102,6 +119,7 @@ private:
 
   GimbalMode mode_ = GimbalMode::IDLE;
   GimbalState state_;
+  GimbalRxStats rx_stats_;
   tools::ThreadSafeQueue<std::tuple<Eigen::Quaterniond, std::chrono::steady_clock::time_point>>
     queue_{1000};
 

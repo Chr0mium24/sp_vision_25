@@ -1,5 +1,11 @@
 #include "gimbal.hpp"
 
+#include <array>
+#include <cstring>
+#include <sstream>
+
+#include <fmt/core.h>
+
 #include "tools/crc.hpp"
 #include "tools/logger.hpp"
 #include "tools/math_tools.hpp"
@@ -7,7 +13,34 @@
 
 namespace io
 {
-Gimbal::Gimbal(const std::string & config_path)
+namespace
+{
+constexpr size_t kLegacyFrameSize = 28;
+constexpr size_t kExtendedFrameSize = sizeof(GimbalToVision);
+
+static_assert(kExtendedFrameSize == 49, "Unexpected GimbalToVision size.");
+
+float unpack_float(const uint8_t * p)
+{
+  float value = 0.0f;
+  std::memcpy(&value, p, sizeof(float));
+  return value;
+}
+
+std::string hex_prefix(const uint8_t * data, size_t len, size_t max_len = 16)
+{
+  std::ostringstream oss;
+  size_t n = std::min(len, max_len);
+  for (size_t i = 0; i < n; ++i) {
+    oss << fmt::format("{:02X}", data[i]);
+    if (i + 1 < n) oss << ' ';
+  }
+  if (len > n) oss << " ...";
+  return oss.str();
+}
+}  // namespace
+
+Gimbal::Gimbal(const std::string & config_path, bool wait_for_first_q)
 {
   auto yaml = tools::load(config_path);
   auto com_port = tools::read<std::string>(yaml, "com_port");
@@ -25,8 +58,12 @@ Gimbal::Gimbal(const std::string & config_path)
 
   thread_ = std::thread(&Gimbal::read_thread, this);
 
-  queue_.pop();
-  tools::logger()->info("[Gimbal] First q received.");
+  if (wait_for_first_q) {
+    queue_.pop();
+    tools::logger()->info("[Gimbal] First q received.");
+  } else {
+    tools::logger()->warn("[Gimbal] Skip waiting first q (debug mode).");
+  }
 }
 
 Gimbal::~Gimbal()
@@ -46,6 +83,18 @@ GimbalState Gimbal::state() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return state_;
+}
+
+GimbalRxStats Gimbal::rx_stats() const
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  return rx_stats_;
+}
+
+bool Gimbal::has_valid_q() const
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  return rx_stats_.good_frames > 0;
 }
 
 std::string Gimbal::str(GimbalMode mode) const
@@ -142,62 +191,161 @@ void Gimbal::read_thread()
 {
   tools::logger()->info("[Gimbal] read_thread started.");
   int error_count = 0;
+  auto last_stats_log = std::chrono::steady_clock::now();
+  uint64_t prev_good = 0, prev_crc = 0, prev_short = 0, prev_header_mismatch = 0;
+  uint64_t last_crc_sample = 0;
 
   while (!quit_) {
     if (error_count > 5000) {
       error_count = 0;
       tools::logger()->warn("[Gimbal] Too many errors, attempting to reconnect...");
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        rx_stats_.reconnect_count++;
+      }
       reconnect();
       continue;
     }
 
     if (!read(reinterpret_cast<uint8_t *>(&rx_data_.header), 1)) {
       error_count++;
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        rx_stats_.short_read++;
+      }
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
       continue;
     }
 
-    if (rx_data_.header != 0x5A) continue;
-
-    auto t = std::chrono::steady_clock::now();
-
-    if (!read(
-          reinterpret_cast<uint8_t *>(&rx_data_) + 1,
-          sizeof(rx_data_) - 1)) {
-      error_count++;
+    if (rx_data_.header != 0x5A) {
+      std::lock_guard<std::mutex> lock(mutex_);
+      rx_stats_.header_mismatch++;
+      rx_stats_.last_header = rx_data_.header;
       continue;
     }
 
-    if (!tools::check_crc16(reinterpret_cast<uint8_t *>(&rx_data_), sizeof(rx_data_))) {
-      tools::logger()->debug("[Gimbal] CRC16 check failed.");
+    auto t = std::chrono::steady_clock::now();
+    std::array<uint8_t, kExtendedFrameSize> frame{};
+    frame[0] = rx_data_.header;
+
+    if (!read(frame.data() + 1, kLegacyFrameSize - 1)) {
+      error_count++;
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        rx_stats_.short_read++;
+      }
+      continue;
+    }
+
+    bool is_legacy = tools::check_crc16(frame.data(), kLegacyFrameSize);
+    bool is_extended = false;
+
+    if (!is_legacy) {
+      if (!read(frame.data() + kLegacyFrameSize, kExtendedFrameSize - kLegacyFrameSize)) {
+        error_count++;
+        {
+          std::lock_guard<std::mutex> lock(mutex_);
+          rx_stats_.short_read++;
+        }
+        continue;
+      }
+      is_extended = tools::check_crc16(frame.data(), kExtendedFrameSize);
+    }
+
+    if (!is_legacy && !is_extended) {
+      error_count++;
+      auto calc_crc_legacy = tools::get_crc16(frame.data(), kLegacyFrameSize - 2);
+      auto rx_crc_legacy = static_cast<uint16_t>(
+        frame[kLegacyFrameSize - 2] | (static_cast<uint16_t>(frame[kLegacyFrameSize - 1]) << 8));
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        rx_stats_.crc_fail++;
+        rx_stats_.consecutive_crc_fail++;
+        rx_stats_.last_rx_crc = rx_crc_legacy;
+        rx_stats_.last_calc_crc = calc_crc_legacy;
+      }
+      auto snap = rx_stats();
+      if (snap.crc_fail != last_crc_sample && snap.crc_fail % 200 == 1) {
+        last_crc_sample = snap.crc_fail;
+        tools::logger()->warn(
+          "[Gimbal] CRC fail x{} (legacy_crc rx=0x{:04X} calc=0x{:04X}) frame_prefix=[{}]",
+          snap.crc_fail, snap.last_rx_crc, snap.last_calc_crc,
+          hex_prefix(frame.data(), kExtendedFrameSize));
+      }
       continue;
     }
 
     error_count = 0;
-    
+
+    float yaw = 0.0f, pitch = 0.0f, roll = 0.0f;
+    float yaw_odom = 0.0f, pitch_odom = 0.0f;
+    float yaw_vel = 0.0f, pitch_vel = 0.0f;
+    uint8_t robot_id = 0;
+
+    if (is_extended) {
+      std::memcpy(&rx_data_, frame.data(), sizeof(rx_data_));
+      yaw = rx_data_.yaw;
+      pitch = rx_data_.pitch;
+      roll = rx_data_.roll;
+      yaw_odom = rx_data_.yaw_odom;
+      pitch_odom = rx_data_.pitch_odom;
+      yaw_vel = rx_data_.yaw_vel;
+      pitch_vel = rx_data_.pitch_vel;
+      robot_id = rx_data_.robot_id;
+    } else {
+      const uint8_t flags = frame[1];
+      (void)flags;
+      roll = unpack_float(frame.data() + 2);
+      pitch = unpack_float(frame.data() + 6);
+      yaw = unpack_float(frame.data() + 10);
+    }
+
     // Euler to Quaternion (Z-Y-X convolution: Yaw-Pitch-Roll)
-    Eigen::Quaterniond q = Eigen::AngleAxisd(rx_data_.yaw, Eigen::Vector3d::UnitZ()) *
-                           Eigen::AngleAxisd(rx_data_.pitch, Eigen::Vector3d::UnitY()) *
-                           Eigen::AngleAxisd(rx_data_.roll, Eigen::Vector3d::UnitX());
-    
+    Eigen::Quaterniond q = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()) *
+                           Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) *
+                           Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX());
+
     queue_.push({q, t});
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      state_.yaw = yaw;
+      state_.yaw_vel = yaw_vel;
+      state_.pitch = pitch;
+      state_.pitch_vel = pitch_vel;
+      state_.roll = roll;
+      state_.yaw_odom = yaw_odom;
+      state_.pitch_odom = pitch_odom;
+      state_.bullet_speed = 0;
+      state_.bullet_count = 0;
+      state_.robot_id = robot_id;
+      mode_ = GimbalMode::AUTO_AIM;
 
-    state_.yaw = rx_data_.yaw;
-    state_.yaw_vel = rx_data_.yaw_vel;
-    state_.pitch = rx_data_.pitch;
-    state_.pitch_vel = rx_data_.pitch_vel;
-    state_.roll = rx_data_.roll;
-    state_.yaw_odom = rx_data_.yaw_odom;
-    state_.pitch_odom = rx_data_.pitch_odom;
-    state_.bullet_speed = 0;
-    state_.bullet_count = 0;
-    state_.robot_id = rx_data_.robot_id;
+      rx_stats_.good_frames++;
+      rx_stats_.consecutive_crc_fail = 0;
+      rx_stats_.last_good_frame_time = t;
+      rx_stats_.last_header = 0x5A;
+    }
 
-    // Mapping detect_color to mode as a placeholder or using it directly
-    // If detect_color is 0 (Red), maybe we call it AUTO_AIM?
-    mode_ = GimbalMode::AUTO_AIM; 
+    auto now = std::chrono::steady_clock::now();
+    if (tools::delta_time(now, last_stats_log) >= 1.0) {
+      auto snap = rx_stats();
+      auto d_good = snap.good_frames - prev_good;
+      auto d_crc = snap.crc_fail - prev_crc;
+      auto d_short = snap.short_read - prev_short;
+      auto d_header = snap.header_mismatch - prev_header_mismatch;
+      if (d_crc + d_short + d_header > 0) {
+        tools::logger()->warn(
+          "[Gimbal][1s] good={} crc_fail={} short_read={} bad_header={} total(good={} crc={} short={} bad_header={})",
+          d_good, d_crc, d_short, d_header, snap.good_frames, snap.crc_fail, snap.short_read,
+          snap.header_mismatch);
+      }
+      prev_good = snap.good_frames;
+      prev_crc = snap.crc_fail;
+      prev_short = snap.short_read;
+      prev_header_mismatch = snap.header_mismatch;
+      last_stats_log = now;
+    }
   }
 
   tools::logger()->info("[Gimbal] read_thread stopped.");

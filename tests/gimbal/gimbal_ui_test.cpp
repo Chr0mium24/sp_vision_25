@@ -175,8 +175,8 @@ KeyEvent read_key()
 }
 
 void print_tui(
-  const UiState & ui, const io::GimbalState & gs, const Eigen::Vector3d & ypr_deg, double dt,
-  RunMode run_mode)
+  const UiState & ui, const io::GimbalState & gs, const io::GimbalRxStats & rx,
+  const Eigen::Vector3d & ypr_deg, double dt, RunMode run_mode)
 {
   // Clear screen + move cursor home
   std::fputs("\033[2J\033[H", stdout);
@@ -188,13 +188,19 @@ void print_tui(
     "FB  (deg): yaw:%+.2f  pitch:%+.2f  roll:%+.2f   (from q(t))\n"
     "FB  (rad): yaw:%+.3f  pitch:%+.3f  roll:%+.3f  yaw_odom:%+.3f  pitch_odom:%+.3f\n"
     "VEL (rad/s): yaw_vel:%+.3f  pitch_vel:%+.3f  bullet_speed:%.2f  bullet_count:%u  robot_id:%d\n"
+    "RX stats: good:%llu crc_fail:%llu short_read:%llu bad_header:%llu reconnect:%llu consec_crc:%llu last_crc(rx/calc)=0x%04X/0x%04X\n"
     "\n"
     "Keys: q quit | m mode(read/control) | w/s or Up/Down pitch +/- | a/d or Left/Right yaw -/+ | [/] step | 0 reset | c tracking | r fric | 1 off 2 ready 3 single 4 fire | f toggle fire | space single pulse\n",
     dt * 1e3, run_mode_name(run_mode), ui.tracking ? 1 : 0, ui.fric_on ? 1 : 0, ui.fire_mode,
     fire_mode_name(ui.fire_mode), ui.fire_pulse ? 1 : 0, ui.step_deg, ui.cmd_yaw * 57.3,
     ui.cmd_pitch * 57.3,
     ypr_deg[0], ypr_deg[1], ypr_deg[2], gs.yaw, gs.pitch, gs.roll, gs.yaw_odom, gs.pitch_odom,
-    gs.yaw_vel, gs.pitch_vel, gs.bullet_speed, gs.bullet_count, static_cast<int>(gs.robot_id));
+    gs.yaw_vel, gs.pitch_vel, gs.bullet_speed, gs.bullet_count, static_cast<int>(gs.robot_id),
+    static_cast<unsigned long long>(rx.good_frames), static_cast<unsigned long long>(rx.crc_fail),
+    static_cast<unsigned long long>(rx.short_read),
+    static_cast<unsigned long long>(rx.header_mismatch),
+    static_cast<unsigned long long>(rx.reconnect_count),
+    static_cast<unsigned long long>(rx.consecutive_crc_fail), rx.last_rx_crc, rx.last_calc_crc);
   std::fflush(stdout);
 }
 
@@ -281,7 +287,7 @@ int main(int argc, char * argv[])
 
   tools::Exiter exiter;
 
-  io::Gimbal gimbal(config_path);
+  io::Gimbal gimbal(config_path, false);
   UiState ui;
   ui.tracking = cli.get<int>("tracking") != 0;
   ui.fric_on = cli.get<int>("fric-on") != 0;
@@ -315,8 +321,12 @@ int main(int argc, char * argv[])
     last_loop = now;
 
     auto gs = gimbal.state();
-    Eigen::Quaterniond q = gimbal.q(now);
-    Eigen::Vector3d ypr = tools::eulers(q, 2, 1, 0) * 57.3;
+    auto rx = gimbal.rx_stats();
+    Eigen::Vector3d ypr(gs.yaw * 57.3, gs.pitch * 57.3, gs.roll * 57.3);
+    if (gimbal.has_valid_q()) {
+      Eigen::Quaterniond q = gimbal.q(now);
+      ypr = tools::eulers(q, 2, 1, 0) * 57.3;
+    }
 
     if (ui.fire_pulse && now >= ui.fire_pulse_until) ui.fire_pulse = false;
 
@@ -334,7 +344,7 @@ int main(int argc, char * argv[])
       control_sent = true;
     }
 
-    print_tui(ui, gs, ypr, dt, run_mode);
+    print_tui(ui, gs, rx, ypr, dt, run_mode);
 
     int key = -1;
     if (!no_input) {
