@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
+#include <algorithm>
+#include <string>
 #include <thread>
 #include <unistd.h>
 #include <termios.h>
@@ -96,6 +98,12 @@ enum class FireMode : uint8_t
   Fire = 3
 };
 
+enum class RunMode
+{
+  Read,
+  Control
+};
+
 const char * fire_mode_name(uint8_t mode)
 {
   switch (static_cast<FireMode>(mode)) {
@@ -110,6 +118,31 @@ const char * fire_mode_name(uint8_t mode)
     default:
       return "unknown";
   }
+}
+
+const char * run_mode_name(RunMode mode)
+{
+  switch (mode) {
+    case RunMode::Read:
+      return "read";
+    case RunMode::Control:
+      return "control";
+    default:
+      return "unknown";
+  }
+}
+
+bool parse_run_mode(const std::string & mode_str, RunMode & mode)
+{
+  if (mode_str == "read") {
+    mode = RunMode::Read;
+    return true;
+  }
+  if (mode_str == "control") {
+    mode = RunMode::Control;
+    return true;
+  }
+  return false;
 }
 
 KeyEvent read_key()
@@ -141,21 +174,23 @@ KeyEvent read_key()
   return {Key::Char, static_cast<int>(c)};
 }
 
-void print_tui(const UiState & ui, const io::GimbalState & gs, const Eigen::Vector3d & ypr_deg, double dt)
+void print_tui(
+  const UiState & ui, const io::GimbalState & gs, const Eigen::Vector3d & ypr_deg, double dt,
+  RunMode run_mode)
 {
   // Clear screen + move cursor home
   std::fputs("\033[2J\033[H", stdout);
 
   std::printf(
     "Gimbal UI Test (TUI fallback)\n"
-    "dt: %.1fms  tracking:%d  fric:%d  fire_mode:%u(%s)  pulse:%d  step:%.2fdeg\n"
+    "dt: %.1fms  mode:%s  tracking:%d  fric:%d  fire_mode:%u(%s)  pulse:%d  step:%.2fdeg\n"
     "CMD (deg): yaw:%+.2f  pitch:%+.2f\n"
     "FB  (deg): yaw:%+.2f  pitch:%+.2f  roll:%+.2f   (from q(t))\n"
     "FB  (rad): yaw:%+.3f  pitch:%+.3f  roll:%+.3f  yaw_odom:%+.3f  pitch_odom:%+.3f\n"
     "VEL (rad/s): yaw_vel:%+.3f  pitch_vel:%+.3f  bullet_speed:%.2f  bullet_count:%u  robot_id:%d\n"
     "\n"
-    "Keys: q quit | w/s or Up/Down pitch +/- | a/d or Left/Right yaw -/+ | [/] step | 0 reset | c tracking | r fric | 1 off 2 ready 3 single 4 fire | f toggle fire | space single pulse\n",
-    dt * 1e3, ui.tracking ? 1 : 0, ui.fric_on ? 1 : 0, ui.fire_mode,
+    "Keys: q quit | m mode(read/control) | w/s or Up/Down pitch +/- | a/d or Left/Right yaw -/+ | [/] step | 0 reset | c tracking | r fric | 1 off 2 ready 3 single 4 fire | f toggle fire | space single pulse\n",
+    dt * 1e3, run_mode_name(run_mode), ui.tracking ? 1 : 0, ui.fric_on ? 1 : 0, ui.fire_mode,
     fire_mode_name(ui.fire_mode), ui.fire_pulse ? 1 : 0, ui.step_deg, ui.cmd_yaw * 57.3,
     ui.cmd_pitch * 57.3,
     ypr_deg[0], ypr_deg[1], ypr_deg[2], gs.yaw, gs.pitch, gs.roll, gs.yaw_odom, gs.pitch_odom,
@@ -210,22 +245,50 @@ void draw_gauges(
 const std::string keys =
   "{help h usage ? |      | 输出命令行参数说明}"
   "{@config-path   |      | 位置参数，yaml配置文件路径 }"
-  "{nogui          | false| 强制不使用OpenCV窗口(TUI模式)}";
+  "{nogui          | false| 强制不使用OpenCV窗口(TUI模式)}"
+  "{mode           | control | 运行模式: read/control }"
+  "{once           | false | 只运行一次循环后退出 }"
+  "{duration-ms    | 0 | 运行时长(ms), 0为无限 }"
+  "{loop-ms        | 5 | 每次循环sleep时长(ms) }"
+  "{no-input       | false | 禁用键盘输入, 便于脚本反复调试 }"
+  "{tracking       | 1 | 初始tracking: 0/1 }"
+  "{fric-on        | 1 | 初始fric_on: 0/1 }"
+  "{fire-mode      | 0 | 初始fire_mode: 0(off)/1(ready)/2(single)/3(fire) }"
+  "{yaw-deg        | 0 | 初始控制yaw角(度) }"
+  "{pitch-deg      | 0 | 初始控制pitch角(度) }"
+  "{step-deg       | 5 | 键控步进角(度) }";
 
 int main(int argc, char * argv[])
 {
   cv::CommandLineParser cli(argc, argv, keys);
   auto config_path = cli.get<std::string>(0);
   bool nogui = cli.get<bool>("nogui");
+  bool once = cli.get<bool>("once");
+  int duration_ms = std::max(0, cli.get<int>("duration-ms"));
+  int loop_ms = std::max(1, cli.get<int>("loop-ms"));
+  bool no_input = cli.get<bool>("no-input");
+  auto mode_str = cli.get<std::string>("mode");
   if (cli.has("help") || config_path.empty()) {
     cli.printMessage();
     return 0;
+  }
+
+  RunMode run_mode = RunMode::Control;
+  if (!parse_run_mode(mode_str, run_mode)) {
+    std::fprintf(stderr, "invalid --mode: %s (expected: read/control)\n", mode_str.c_str());
+    return 1;
   }
 
   tools::Exiter exiter;
 
   io::Gimbal gimbal(config_path);
   UiState ui;
+  ui.tracking = cli.get<int>("tracking") != 0;
+  ui.fric_on = cli.get<int>("fric-on") != 0;
+  ui.fire_mode = static_cast<uint8_t>(std::clamp(cli.get<int>("fire-mode"), 0, 3));
+  ui.cmd_yaw = cli.get<double>("yaw-deg") / 57.3;
+  ui.cmd_pitch = cli.get<double>("pitch-deg") / 57.3;
+  ui.step_deg = std::clamp(cli.get<double>("step-deg"), 0.01, 15.0);
 
   bool use_gui = !nogui;
   if (use_gui) {
@@ -241,9 +304,13 @@ int main(int argc, char * argv[])
   terminal.enable();
 
   auto last_loop = std::chrono::steady_clock::now();
+  auto start_t = last_loop;
+  bool control_sent = false;
 
   while (!exiter.exit()) {
     auto now = std::chrono::steady_clock::now();
+    if (duration_ms > 0 && now - start_t >= std::chrono::milliseconds(duration_ms)) break;
+
     auto dt = tools::delta_time(now, last_loop);
     last_loop = now;
 
@@ -253,26 +320,32 @@ int main(int argc, char * argv[])
 
     if (ui.fire_pulse && now >= ui.fire_pulse_until) ui.fire_pulse = false;
 
-    io::VisionToGimbal plan{};
-    plan.tracking = ui.tracking ? 1 : 0;
-    plan.yaw = static_cast<float>(ui.cmd_yaw);
-    plan.pitch = static_cast<float>(ui.cmd_pitch);
     uint8_t fire_cmd = ui.fire_mode;
     if (ui.fire_pulse) fire_cmd = static_cast<uint8_t>(FireMode::Single);
-    plan.fire = fire_cmd;
-    plan.fric_on = ui.fric_on ? 1 : 0;
-    gimbal.send(plan);
 
-    print_tui(ui, gs, ypr, dt);
+    if (run_mode == RunMode::Control) {
+      io::VisionToGimbal plan{};
+      plan.tracking = ui.tracking ? 1 : 0;
+      plan.yaw = static_cast<float>(ui.cmd_yaw);
+      plan.pitch = static_cast<float>(ui.cmd_pitch);
+      plan.fire = fire_cmd;
+      plan.fric_on = ui.fric_on ? 1 : 0;
+      gimbal.send(plan);
+      control_sent = true;
+    }
+
+    print_tui(ui, gs, ypr, dt, run_mode);
 
     int key = -1;
-    auto ev = read_key();
-    if (ev.key == Key::Quit) break;
-    if (ev.key == Key::Char) key = ev.ch;
-    if (ev.key == Key::Left) key = 81;
-    if (ev.key == Key::Right) key = 83;
-    if (ev.key == Key::Up) key = 82;
-    if (ev.key == Key::Down) key = 84;
+    if (!no_input) {
+      auto ev = read_key();
+      if (ev.key == Key::Quit) break;
+      if (ev.key == Key::Char) key = ev.ch;
+      if (ev.key == Key::Left) key = 81;
+      if (ev.key == Key::Right) key = 83;
+      if (ev.key == Key::Up) key = 82;
+      if (ev.key == Key::Down) key = 84;
+    }
 
     if (use_gui) {
       cv::Mat canvas(560, 980, CV_8UC3);
@@ -286,6 +359,9 @@ int main(int argc, char * argv[])
     }
 
     if (key == 'q') break;
+    if (key == 'm') {
+      run_mode = (run_mode == RunMode::Control) ? RunMode::Read : RunMode::Control;
+    }
     if (key == 'c') ui.tracking = !ui.tracking;
     if (key == 'r') ui.fric_on = !ui.fric_on;
     if (key == '1') ui.fire_mode = static_cast<uint8_t>(FireMode::Off);
@@ -316,16 +392,19 @@ int main(int argc, char * argv[])
     if (key == 'w' || key == 82) ui.cmd_pitch += step_rad; // up
     if (key == 's' || key == 84) ui.cmd_pitch -= step_rad; // down
 
-    std::this_thread::sleep_for(5ms);
+    if (once) break;
+    std::this_thread::sleep_for(std::chrono::milliseconds(loop_ms));
   }
 
-  io::VisionToGimbal stop{};
-  stop.tracking = 0;
-  stop.yaw = 0;
-  stop.pitch = 0;
-  stop.fire = 0;
-  stop.fric_on = 0;
-  gimbal.send(stop);
+  if (control_sent) {
+    io::VisionToGimbal stop{};
+    stop.tracking = 0;
+    stop.yaw = 0;
+    stop.pitch = 0;
+    stop.fire = 0;
+    stop.fric_on = 0;
+    gimbal.send(stop);
+  }
 
   return 0;
 }

@@ -86,7 +86,7 @@ IMU型号：使用C板内置BMI088作为IMU\
 
 3. 运行demo:
     ```bash
-    ./build/auto_aim_test
+    ./build/bin/tests/auto_aim/auto_aim_test
     ```
 
 4. 注册自启：
@@ -208,28 +208,20 @@ sp_vision_25
 │   └── omniperception // 全向感知相关算法实现
 │   │   └── ...
 ├── tests
-│   ├── auto_aim_test.cpp         // 自瞄录制视频测试程序
-│   ├── auto_buff_test.cpp        // 打符录制视频测试程序
-│   ├── camera_detect_test.cpp    // 识别器测试程序（工业相机）
-│   ├── camera_test.cpp           // 相机测试程序
-│   ├── camera_thread_test.cpp    // 相机线程测试程序
-│   ├── cboard_test.cpp           // C板测试程序
-│   ├── detector_video_test.cpp   // 识别器测试程序（视频）
-│   ├── dm_test.cpp               // 达妙IMU测试程序
-│   ├── fire_test.cpp             // 开火测试程序
-│   ├── gimbal_response_test.cpp  // 云台响应测试程序
-│   ├── gimbal_test.cpp           // 云台通信测试程序
-│   ├── handeye_test.cpp          // 手眼标定测试程序
-│   ├── minimum_vision_system.cpp // 最小视觉系统测试程序
-│   ├── multi_usbcamera_test.cpp  // 多USB摄像头测试程序
-│   ├── planner_test_offline.cpp  // 规划器测试程序（离线）
-│   ├── planner_test.cpp          // 规划器测试程序（实车）
-│   ├── publish_test.cpp          // ROS发送测试程序
-│   ├── subscribe_test.cpp        // ROS接收测试程序
-│   ├── topic_loop_test.cpp       // ROS话题循环测试程序
-│   ├── usbcamera_detect_test.cpp // 识别器测试程序（USB相机）
-│   ├── usbcamera_test.cpp        // USB相机测试程序
-│   └── ...
+│   ├── auto_aim      // 自瞄相关测试
+│   │   └── ...
+│   ├── auto_buff     // 打符相关测试
+│   │   └── ...
+│   ├── camera        // 相机相关测试（工业/USB）
+│   │   └── ...
+│   ├── gimbal        // 云台与通信相关测试
+│   │   └── ...
+│   ├── planner       // 规划器相关测试
+│   │   └── ...
+│   ├── ros2          // ROS2话题测试
+│   │   └── ...
+│   └── system        // 系统级联调测试
+│       └── ...
 └── tools          // 工具层，见3.4软件架构
     ├── crc.hpp                    // CRC校验
     ├── exiter.hpp                 // 退出检测
