@@ -45,6 +45,16 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 调用示例：
 
 ```bash
+# 一键封装脚本（推荐）
+./diagnostics/gimbal/diagnose.sh quick
+./diagnostics/gimbal/diagnose.sh rxonly
+./diagnostics/gimbal/diagnose.sh scan
+./diagnostics/gimbal/diagnose.sh snapshot
+./diagnostics/gimbal/diagnose.sh watch
+./diagnostics/gimbal/diagnose.sh control
+./diagnostics/gimbal/diagnose.sh script-control
+./diagnostics/gimbal/diagnose.sh port-info
+
 # 非英雄协议快速诊断：先看串口是否有字节、是否有有效帧（推荐先跑）
 ./build/bin/diag/gimbal/gimbal_link_diag_test configs/standard3.yaml --duration-ms=3000 --summary-ms=1000
 
