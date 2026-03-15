@@ -8,6 +8,7 @@ cd "${REPO_ROOT}"
 BIN_DIR="${REPO_ROOT}/build/bin/diag/gimbal"
 LINK_DIAG="${BIN_DIR}/gimbal_link_diag_test"
 UI_TEST="${BIN_DIR}/gimbal_ui_test"
+SERIAL_PROBE="${BIN_DIR}/gimbal_serial_probe"
 
 ACTION="${1:-quick}"
 shift || true
@@ -26,6 +27,9 @@ Usage:
 Actions:
   quick          Link quick check (send on, 3s)
   rxonly         RX-only check (send off, 3s)
+  proto          Strict protocol check (rx-only + require-rx)
+  probe          Byte-stream probe summary (no protocol parse)
+  probe-raw      Byte-stream hex sample (short raw dump)
   scan           Scan common serial ports with link diag
   snapshot       One-shot read snapshot (dump-once)
   watch          Continuous read mode (nogui)
@@ -36,6 +40,8 @@ Actions:
 
 Examples:
   diagnostics/gimbal/diagnose.sh quick
+  diagnostics/gimbal/diagnose.sh proto
+  diagnostics/gimbal/diagnose.sh probe-raw
   diagnostics/gimbal/diagnose.sh scan configs/standard3.yaml
   diagnostics/gimbal/diagnose.sh snapshot configs/standard3.yaml --wait-valid-ms=2500
 EOF
@@ -63,6 +69,21 @@ run_quick() {
 run_rxonly() {
   ensure_bin "${LINK_DIAG}"
   "${LINK_DIAG}" "${CONFIG}" --no-send --duration-ms=3000 --summary-ms=1000 "$@"
+}
+
+run_proto() {
+  ensure_bin "${LINK_DIAG}"
+  "${LINK_DIAG}" "${CONFIG}" --no-send --require-rx --duration-ms=2200 --summary-ms=1000 "$@"
+}
+
+run_probe() {
+  ensure_bin "${SERIAL_PROBE}"
+  "${SERIAL_PROBE}" "${CONFIG}" --duration-ms=3000 --summary-ms=1000 "$@"
+}
+
+run_probe_raw() {
+  ensure_bin "${SERIAL_PROBE}"
+  "${SERIAL_PROBE}" "${CONFIG}" --duration-ms=1200 --summary-ms=1200 --raw-log --hex-len=32 "$@"
 }
 
 run_scan() {
@@ -124,6 +145,9 @@ run_port_info() {
 case "${ACTION}" in
   quick) run_quick "$@" ;;
   rxonly) run_rxonly "$@" ;;
+  proto) run_proto "$@" ;;
+  probe) run_probe "$@" ;;
+  probe-raw) run_probe_raw "$@" ;;
   scan) run_scan "$@" ;;
   snapshot) run_snapshot "$@" ;;
   watch) run_watch "$@" ;;
