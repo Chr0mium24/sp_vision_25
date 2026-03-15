@@ -129,6 +129,26 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 
 说明：该测试是离线数据回放，不依赖真实云台在线回传。
 
+### 2.5 相机联通与预览（在线）
+
+目标：快速确认相机设备存在、取流正常、可选检测链路可跑通。
+
+推荐入口：
+
+- `diagnostics/camera/diagnose.sh`（完整说明见 [docs/diagnose/camera_diagnose.md](diagnose/camera_diagnose.md)）
+
+调用示例：
+
+```bash
+./diagnostics/camera/diagnose.sh info
+sudo ./diagnostics/camera/diagnose.sh release
+./diagnostics/camera/diagnose.sh tune configs/standard3.yaml --scale=0.7
+./diagnostics/camera/diagnose.sh quick configs/standard3.yaml
+./diagnostics/camera/diagnose.sh window configs/standard3.yaml --scale=0.7
+./diagnostics/camera/diagnose.sh detect configs/standard3.yaml
+./diagnostics/camera/diagnose.sh usb configs/sentry.yaml --name=video0 -d
+```
+
 ## 3. 可执行文件分组
 
 可执行文件分组如下：
