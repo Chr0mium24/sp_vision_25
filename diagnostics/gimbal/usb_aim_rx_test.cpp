@@ -122,9 +122,10 @@ int main(int argc, char * argv[])
   while (!exiter.exit()) {
     size_t avail = serial.available();
     if (avail > 0) {
-      std::vector<uint8_t> chunk(avail);
+      std::vector<uint8_t> chunk;
+      chunk.reserve(avail);
       size_t got = serial.read(chunk, avail);
-      rx_buffer.insert(rx_buffer.end(), chunk.begin(), chunk.begin() + got);
+      rx_buffer.insert(rx_buffer.end(), chunk.begin(), chunk.end());
     }
 
     while (parse_usb_rx_frame(rx_buffer, rx, checksum_ok)) {

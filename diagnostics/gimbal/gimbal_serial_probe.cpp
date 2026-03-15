@@ -338,7 +338,8 @@ int main(int argc, char * argv[])
       try {
         size_t avail = serial.available();
         size_t to_read = std::min(static_cast<size_t>(read_max), std::max<size_t>(1, avail));
-        std::vector<uint8_t> chunk(to_read);
+        std::vector<uint8_t> chunk;
+        chunk.reserve(to_read);
         size_t got = serial.read(chunk, to_read);
         stats.read_calls++;
 
@@ -347,8 +348,8 @@ int main(int argc, char * argv[])
         } else {
           stats.bytes += got;
           t_last_data = now;
-          stream_buffer.insert(stream_buffer.end(), chunk.begin(), chunk.begin() + static_cast<long>(got));
-          last_chunk_hex = hex_prefix(chunk.data(), got, static_cast<size_t>(hex_len));
+          stream_buffer.insert(stream_buffer.end(), chunk.begin(), chunk.end());
+          last_chunk_hex = hex_prefix(chunk.data(), chunk.size(), static_cast<size_t>(hex_len));
           if (raw_log) {
             std::printf("[raw] n=%zu hex=%s\n", got, last_chunk_hex.c_str());
           }

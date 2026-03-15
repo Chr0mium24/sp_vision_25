@@ -340,11 +340,13 @@ int main(int argc, char * argv[])
       if (avail == 0) {
         stats.read_zero++;
       } else {
-        std::vector<uint8_t> chunk(std::min<size_t>(avail, 4096));
-        size_t got = serial.read(chunk, chunk.size());
+        size_t to_read = std::min<size_t>(avail, 4096);
+        std::vector<uint8_t> chunk;
+        chunk.reserve(to_read);
+        size_t got = serial.read(chunk, to_read);
         if (got > 0) {
           stats.bytes += got;
-          buffer.insert(buffer.end(), chunk.begin(), chunk.begin() + static_cast<long>(got));
+          buffer.insert(buffer.end(), chunk.begin(), chunk.end());
           parse_stream(buffer, stats, frame);
         } else {
           stats.read_zero++;
