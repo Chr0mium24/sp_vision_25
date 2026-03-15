@@ -155,6 +155,12 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 - 查看参数：所有测试都支持 `--help`。
 - 串口权限：若访问 `/dev/tty*` 失败，先检查 `dialout` 权限与 udev 规则。
 - 无显示环境：加 `--nogui` 或不传 `--show=true`，使用 TUI 调试。
+- 电控侧日志（`references` 工程）：
+  - USB 链路统计日志在 `SEML/App/Robo/Robo_USB.c`，默认每 `500ms` 通过 `USART1` 输出一行：
+  - `rx_poll/rx_empty/rx_total_bytes/rx_auto_aim_ok/rx_crc_fail/tx_busy` 等关键计数。
+  - 控制状态日志在 `SEML/App/Robo/Robo_Control.c`，默认状态变化或 `1s` 周期输出：
+  - `s1/s2/src/remote_off/aa/shoot`，可直接判断“中档是否仍为遥控控制”。
+  - 两处可通过宏关闭或调频：`USB_LINK_DIAG_LOG_ENABLE`、`USB_LINK_DIAG_LOG_PERIOD_MS`、`CONTROL_LINK_DIAG_LOG_ENABLE`、`CONTROL_LINK_DIAG_LOG_PERIOD_MS`。
 - 只编译单个测试：
 
 ```bash
