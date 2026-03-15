@@ -1,6 +1,3 @@
-
-cmake -S . -B build
-make -C build/ -j`nproc`
 # 同济大学SuperPower战队25赛季自瞄算法开源
 
 ## 本项目亮点

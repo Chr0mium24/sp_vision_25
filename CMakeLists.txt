@@ -77,8 +77,6 @@ add_executable(usbcamera_detect_test tests/camera/usbcamera_detect_test.cpp)
 add_executable(usbcamera_test tests/camera/usbcamera_test.cpp)
 add_executable(handeye_test tests/camera/handeye_test.cpp)
 add_executable(dm_test tests/system/dm_test.cpp)
-add_executable(auto_aim_ui_test tests/auto_aim/auto_aim_ui_test.cpp)
-add_executable(auto_aim_ui_tune tests/auto_aim/auto_aim_ui_tune.cpp)
 
 
 target_link_libraries(auto_aim_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
@@ -97,8 +95,6 @@ target_link_libraries(usbcamera_detect_test ${OpenCV_LIBS} fmt::fmt yaml-cpp too
 target_link_libraries(usbcamera_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 target_link_libraries(handeye_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 target_link_libraries(dm_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
-target_link_libraries(auto_aim_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
-target_link_libraries(auto_aim_ui_tune ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 
 
 add_executable(gimbal_test tests/gimbal/gimbal_test.cpp)
@@ -110,17 +106,26 @@ target_link_libraries(planner_test ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim too
 add_executable(planner_test_offline tests/planner/planner_test_offline.cpp)
 target_link_libraries(planner_test_offline ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
 
-add_executable(gimbal_ui_test tests/gimbal/gimbal_ui_test.cpp)
+##################diagnostics##################
+add_executable(auto_aim_ui_test diagnostics/auto_aim/auto_aim_ui_test.cpp)
+add_executable(auto_aim_ui_tune diagnostics/auto_aim/auto_aim_ui_tune.cpp)
+target_link_libraries(auto_aim_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
+target_link_libraries(auto_aim_ui_tune ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
+
+add_executable(gimbal_ui_test diagnostics/gimbal/gimbal_ui_test.cpp)
 target_link_libraries(gimbal_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 
-add_executable(hero_gimbal_ui_test tests/gimbal/hero_gimbal_ui_test.cpp)
+add_executable(hero_gimbal_ui_test diagnostics/gimbal/hero_gimbal_ui_test.cpp)
 target_link_libraries(hero_gimbal_ui_test ${OpenCV_LIBS} fmt::fmt tools io)
 
-add_executable(usb_aim_rx_test tests/gimbal/usb_aim_rx_test.cpp)
+add_executable(usb_aim_rx_test diagnostics/gimbal/usb_aim_rx_test.cpp)
 target_link_libraries(usb_aim_rx_test ${OpenCV_LIBS} fmt::fmt tools io)
 
-add_executable(gimbal_serial_probe tests/gimbal/gimbal_serial_probe.cpp)
+add_executable(gimbal_serial_probe diagnostics/gimbal/gimbal_serial_probe.cpp)
 target_link_libraries(gimbal_serial_probe ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
+
+add_executable(gimbal_link_diag_test diagnostics/gimbal/gimbal_link_diag_test.cpp)
+target_link_libraries(gimbal_link_diag_test ${OpenCV_LIBS} fmt::fmt tools io)
 
 function(set_test_output target group)
     set_target_properties(${target} PROPERTIES
@@ -128,9 +133,13 @@ function(set_test_output target group)
     )
 endfunction()
 
+function(set_diag_output target group)
+    set_target_properties(${target} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/diag/${group}"
+    )
+endfunction()
+
 set_test_output(auto_aim_test auto_aim)
-set_test_output(auto_aim_ui_test auto_aim)
-set_test_output(auto_aim_ui_tune auto_aim)
 set_test_output(detector_video_test auto_aim)
 set_test_output(fire_test auto_aim)
 
@@ -148,16 +157,20 @@ set_test_output(handeye_test camera)
 
 set_test_output(gimbal_test gimbal)
 set_test_output(gimbal_response_test gimbal)
-set_test_output(gimbal_ui_test gimbal)
-set_test_output(hero_gimbal_ui_test gimbal)
-set_test_output(usb_aim_rx_test gimbal)
-set_test_output(gimbal_serial_probe gimbal)
 
 set_test_output(planner_test planner)
 set_test_output(planner_test_offline planner)
 
 set_test_output(cboard_test system)
 set_test_output(dm_test system)
+
+set_diag_output(auto_aim_ui_test auto_aim)
+set_diag_output(auto_aim_ui_tune auto_aim)
+set_diag_output(gimbal_ui_test gimbal)
+set_diag_output(hero_gimbal_ui_test gimbal)
+set_diag_output(usb_aim_rx_test gimbal)
+set_diag_output(gimbal_serial_probe gimbal)
+set_diag_output(gimbal_link_diag_test gimbal)
 
 # 检查 ROS 环境
 find_package(ament_cmake QUIET)
