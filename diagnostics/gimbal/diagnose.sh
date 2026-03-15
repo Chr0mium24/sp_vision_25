@@ -10,7 +10,7 @@ LINK_DIAG="${BIN_DIR}/gimbal_link_diag_test"
 UI_TEST="${BIN_DIR}/gimbal_ui_test"
 SERIAL_PROBE="${BIN_DIR}/gimbal_serial_probe"
 
-ACTION="${1:-quick}"
+ACTION="${1:-}"
 shift || true
 
 CONFIG="configs/standard3.yaml"
@@ -141,6 +141,11 @@ run_port_info() {
     echo "[diagnose] ${com_port} not present"
   fi
 }
+
+if [[ -z "${ACTION}" ]]; then
+  usage
+  exit 0
+fi
 
 case "${ACTION}" in
   quick) run_quick "$@" ;;
