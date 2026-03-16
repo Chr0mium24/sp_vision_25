@@ -53,9 +53,8 @@ void CBoard::send(Command command) const
   frame.data[1] = (command.shoot) ? 1 : 0;
   frame.data[2] = (int16_t)(command.yaw * 1e4) >> 8;
   frame.data[3] = (int16_t)(command.yaw * 1e4);
-  // Protocol side uses pitch up negative, while app side uses pitch up positive.
-  frame.data[4] = (int16_t)(-command.pitch * 1e4) >> 8;
-  frame.data[5] = (int16_t)(-command.pitch * 1e4);
+  frame.data[4] = (int16_t)(command.pitch * 1e4) >> 8;
+  frame.data[5] = (int16_t)(command.pitch * 1e4);
   frame.data[6] = (int16_t)(command.horizon_distance * 1e4) >> 8;
   frame.data[7] = (int16_t)(command.horizon_distance * 1e4);
 

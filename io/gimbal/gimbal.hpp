@@ -22,7 +22,7 @@ struct __attribute__((packed)) GimbalToVision
   uint8_t reset_tracker : 1;
   uint8_t reserved : 6;
   float yaw;    // rad
-  float pitch;  // rad, protocol: up is negative
+  float pitch;  // rad, pitch up is positive
   float roll;   // rad
   float yaw_odom;
   float pitch_odom;
@@ -42,7 +42,7 @@ struct __attribute__((packed)) VisionToGimbal
 {
   uint8_t header = 0xA5;
   uint8_t tracking;
-  float pitch;  // rad, protocol: up is negative
+  float pitch;  // rad, pitch up is positive
   float yaw;
   uint8_t fire;
   uint8_t fric_on;
@@ -63,11 +63,11 @@ struct GimbalState
 {
   float yaw = 0.0f;
   float yaw_vel = 0.0f;
-  float pitch = 0.0f;      // rad, app side: up is positive
-  float pitch_vel = 0.0f;  // rad/s, app side: up is positive
+  float pitch = 0.0f;      // rad, pitch up is positive
+  float pitch_vel = 0.0f;  // rad/s, pitch up is positive
   float roll = 0.0f;
   float yaw_odom = 0.0f;
-  float pitch_odom = 0.0f;  // app side: up is positive
+  float pitch_odom = 0.0f;  // pitch up is positive
   float bullet_speed = 0.0f;
   uint16_t bullet_count = 0;
   uint8_t robot_id = 0;
