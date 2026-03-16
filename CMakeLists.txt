@@ -160,6 +160,8 @@ set_test_output(dm_test system)
 
 set_diag_output(auto_aim_ui_test auto_aim)
 set_diag_output(auto_aim_ui_tune auto_aim)
+set_diag_output(auto_buff_debug auto_buff)
+set_diag_output(auto_buff_debug_mpc auto_buff)
 set_diag_output(gimbal_ui_test gimbal)
 set_diag_output(gimbal_serial_probe gimbal)
 set_diag_output(gimbal_link_diag_test gimbal)

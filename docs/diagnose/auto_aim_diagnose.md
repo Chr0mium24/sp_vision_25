@@ -108,7 +108,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 ./diagnostics/auto_aim/diagnose.sh rune-online-mpc configs/standard3.yaml
 ```
 
-说明：依赖 `build/auto_buff_debug` 与 `build/auto_buff_debug_mpc`。
+说明：依赖 `build/bin/diag/auto_buff/auto_buff_debug` 与 `build/bin/diag/auto_buff/auto_buff_debug_mpc`。
 
 ## 4. 排查建议
 

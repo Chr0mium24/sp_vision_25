@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_ROOT}"
 
 DIAG_DIR="${REPO_ROOT}/build/bin/diag/auto_aim"
+DIAG_BUFF_DIR="${REPO_ROOT}/build/bin/diag/auto_buff"
 TEST_AIM_DIR="${REPO_ROOT}/build/bin/tests/auto_aim"
 TEST_BUFF_DIR="${REPO_ROOT}/build/bin/tests/auto_buff"
 
@@ -14,8 +15,8 @@ AUTO_AIM_UI_TUNE="${DIAG_DIR}/auto_aim_ui_tune"
 AUTO_AIM_TEST="${TEST_AIM_DIR}/auto_aim_test"
 DETECTOR_VIDEO_TEST="${TEST_AIM_DIR}/detector_video_test"
 POWER_RUNE_TEST="${TEST_BUFF_DIR}/auto_power_rune_test"
-AUTO_BUFF_DEBUG="${REPO_ROOT}/build/auto_buff_debug"
-AUTO_BUFF_DEBUG_MPC="${REPO_ROOT}/build/auto_buff_debug_mpc"
+AUTO_BUFF_DEBUG="${DIAG_BUFF_DIR}/auto_buff_debug"
+AUTO_BUFF_DEBUG_MPC="${DIAG_BUFF_DIR}/auto_buff_debug_mpc"
 
 ACTION="${1:-}"
 if [[ -n "${ACTION}" ]]; then
@@ -42,8 +43,8 @@ Actions:
   rune-box        Offline power rune detect + draw boxes (input-prefix)
   rune-rec        Alias of rune-box
   rune-tune       Tune power rune YAML params, then rerun rune-box
-  rune-online     Online power rune debug (build/auto_buff_debug)
-  rune-online-mpc Online power rune MPC debug (build/auto_buff_debug_mpc)
+  rune-online     Online power rune debug (build/bin/diag/auto_buff/auto_buff_debug)
+  rune-online-mpc Online power rune MPC debug (build/bin/diag/auto_buff/auto_buff_debug_mpc)
   help            Show this message
 
 Examples:

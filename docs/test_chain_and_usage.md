@@ -151,6 +151,7 @@ sudo ./diagnostics/camera/diagnose.sh release
 - `ros2`（仅 ROS2 依赖满足时编译）：`publish_test`, `subscribe_test`, `topic_loop_test`
 - 联调诊断（`build/bin/diag`）：
 - `auto_aim`: `auto_aim_ui_test`, `auto_aim_ui_tune`
+- `auto_buff`: `auto_buff_debug`, `auto_buff_debug_mpc`
 - `gimbal`: `gimbal_ui_test`, `gimbal_link_diag_test`, `gimbal_serial_probe`
 
 ## 4. 常见问题
