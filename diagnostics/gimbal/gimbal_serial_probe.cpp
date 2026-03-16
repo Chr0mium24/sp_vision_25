@@ -136,12 +136,12 @@ void parse_extended_frame(const uint8_t * frame, FrameSnapshot & out)
   out.detect_color = flags & 0x01;
   out.reset_tracker = (flags >> 1) & 0x01;
   out.yaw = unpack_float(frame + 2);
-  out.pitch = unpack_float(frame + 6);
+  out.pitch = -unpack_float(frame + 6);
   out.roll = unpack_float(frame + 10);
   out.yaw_odom = unpack_float(frame + 14);
-  out.pitch_odom = unpack_float(frame + 18);
+  out.pitch_odom = -unpack_float(frame + 18);
   out.yaw_vel = unpack_float(frame + 22);
-  out.pitch_vel = unpack_float(frame + 26);
+  out.pitch_vel = -unpack_float(frame + 26);
   out.robot_id = frame[46];
   out.t = std::chrono::steady_clock::now();
 }

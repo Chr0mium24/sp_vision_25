@@ -104,12 +104,12 @@ void parse_extended_frame(const uint8_t * frame, FrameSnapshot & out)
   out.detect_color = flags & 0x01;
   out.reset_tracker = (flags >> 1) & 0x01;
   out.yaw = unpack_float(frame + 2);
-  out.pitch = unpack_float(frame + 6);
+  out.pitch = -unpack_float(frame + 6);
   out.roll = unpack_float(frame + 10);
   out.yaw_odom = unpack_float(frame + 14);
-  out.pitch_odom = unpack_float(frame + 18);
+  out.pitch_odom = -unpack_float(frame + 18);
   out.yaw_vel = unpack_float(frame + 22);
-  out.pitch_vel = unpack_float(frame + 26);
+  out.pitch_vel = -unpack_float(frame + 26);
   out.robot_id = frame[46];
   out.t = std::chrono::steady_clock::now();
 }
@@ -244,8 +244,11 @@ int main(int argc, char * argv[])
   tx.tracking = cli.get<int>("tracking") != 0 ? 1 : 0;
   tx.fric_on = cli.get<int>("fric-on") != 0 ? 1 : 0;
   tx.fire = static_cast<uint8_t>(std::clamp(cli.get<int>("fire-mode"), 0, 3));
-  tx.yaw = static_cast<float>(cli.get<double>("yaw-deg") / 57.3);
-  tx.pitch = static_cast<float>(cli.get<double>("pitch-deg") / 57.3);
+  const auto cmd_yaw_deg = cli.get<double>("yaw-deg");
+  const auto cmd_pitch_deg = cli.get<double>("pitch-deg");
+  tx.yaw = static_cast<float>(cmd_yaw_deg / 57.3);
+  // Protocol side uses pitch up negative, while CLI uses pitch up positive.
+  tx.pitch = static_cast<float>(-cmd_pitch_deg / 57.3);
   tx.checksum = tools::get_crc16(
     reinterpret_cast<uint8_t *>(&tx), sizeof(tx) - sizeof(tx.checksum));
 
@@ -253,7 +256,7 @@ int main(int argc, char * argv[])
     "gimbal_link_diag_test: baud=%d duration=%dms summary=%dms loop=%dms send=%s cmd(track=%u fric=%u fire=%u yaw=%.3f pitch=%.3f) ports=",
     baud, duration_ms, summary_ms, loop_ms, no_send ? "off" : "on",
     static_cast<unsigned>(tx.tracking), static_cast<unsigned>(tx.fric_on),
-    static_cast<unsigned>(tx.fire), tx.yaw, tx.pitch);
+    static_cast<unsigned>(tx.fire), cmd_yaw_deg / 57.3, cmd_pitch_deg / 57.3);
   for (size_t i = 0; i < ports.size(); ++i) {
     std::printf("%s%s", i ? "," : "", ports[i].c_str());
   }

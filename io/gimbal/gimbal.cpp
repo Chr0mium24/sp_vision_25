@@ -124,7 +124,8 @@ Eigen::Quaterniond Gimbal::q(std::chrono::steady_clock::time_point t)
 void Gimbal::send(io::VisionToGimbal VisionToGimbal)
 {
   tx_data_.tracking = VisionToGimbal.tracking;
-  tx_data_.pitch = VisionToGimbal.pitch;
+  // Protocol side uses pitch up negative, while app side uses pitch up positive.
+  tx_data_.pitch = -VisionToGimbal.pitch;
   tx_data_.yaw = VisionToGimbal.yaw;
   tx_data_.fire = VisionToGimbal.fire;
   tx_data_.fric_on = VisionToGimbal.fric_on;
@@ -150,7 +151,8 @@ void Gimbal::send(
 {
   tx_data_.tracking = control;
   tx_data_.yaw = yaw;
-  tx_data_.pitch = pitch;
+  // Protocol side uses pitch up negative, while app side uses pitch up positive.
+  tx_data_.pitch = -pitch;
   tx_data_.fire = fire ? 1 : 0;
   tx_data_.fric_on = control ? 1 : 0;
   tx_data_.checksum = tools::get_crc16(
@@ -262,12 +264,13 @@ void Gimbal::read_thread()
 
     std::memcpy(&rx_data_, frame.data(), sizeof(rx_data_));
     yaw = rx_data_.yaw;
-    pitch = rx_data_.pitch;
+    // Protocol side uses pitch up negative, while app side uses pitch up positive.
+    pitch = -rx_data_.pitch;
     roll = rx_data_.roll;
     yaw_odom = rx_data_.yaw_odom;
-    pitch_odom = rx_data_.pitch_odom;
+    pitch_odom = -rx_data_.pitch_odom;
     yaw_vel = rx_data_.yaw_vel;
-    pitch_vel = rx_data_.pitch_vel;
+    pitch_vel = -rx_data_.pitch_vel;
     robot_id = rx_data_.robot_id;
 
     // Euler to Quaternion (Z-Y-X convolution: Yaw-Pitch-Roll)
