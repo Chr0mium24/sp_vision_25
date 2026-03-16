@@ -20,7 +20,6 @@ using namespace std::chrono_literals;
 namespace
 {
 constexpr uint8_t kRxHeader = 0x5A;
-constexpr size_t kLegacyFrameSize = 28;
 constexpr size_t kExtendedFrameSize = 49;
 constexpr double kRad2Deg = 57.29577951308232;
 
@@ -40,7 +39,6 @@ static_assert(sizeof(VisionToGimbal) == 14, "VisionToGimbal packet size mismatch
 struct FrameSnapshot
 {
   bool valid = false;
-  bool extended = false;
   uint8_t detect_color = 0;
   uint8_t reset_tracker = 0;
   uint8_t robot_id = 0;
@@ -64,9 +62,7 @@ struct DiagStats
   uint64_t bytes = 0;
   uint64_t drop_bytes = 0;
   uint64_t headers_seen = 0;
-  uint64_t legacy_ok = 0;
   uint64_t extended_ok = 0;
-  uint64_t legacy_crc_fail = 0;
   uint64_t extended_crc_fail = 0;
 };
 
@@ -101,28 +97,9 @@ float unpack_float(const uint8_t * p)
   return value;
 }
 
-void parse_legacy_frame(const uint8_t * frame, FrameSnapshot & out)
-{
-  out.valid = true;
-  out.extended = false;
-  const uint8_t flags = frame[1];
-  out.detect_color = flags & 0x01;
-  out.reset_tracker = (flags >> 1) & 0x01;
-  out.roll = unpack_float(frame + 2);
-  out.pitch = unpack_float(frame + 6);
-  out.yaw = unpack_float(frame + 10);
-  out.yaw_odom = 0.0f;
-  out.pitch_odom = 0.0f;
-  out.yaw_vel = 0.0f;
-  out.pitch_vel = 0.0f;
-  out.robot_id = 0;
-  out.t = std::chrono::steady_clock::now();
-}
-
 void parse_extended_frame(const uint8_t * frame, FrameSnapshot & out)
 {
   out.valid = true;
-  out.extended = true;
   const uint8_t flags = frame[1];
   out.detect_color = flags & 0x01;
   out.reset_tracker = (flags >> 1) & 0x01;
@@ -156,15 +133,10 @@ void parse_stream(std::vector<uint8_t> & buffer, DiagStats & stats, FrameSnapsho
       buffer.erase(buffer.begin(), it);
     }
 
-    if (buffer.size() < kLegacyFrameSize) return;
+    if (buffer.size() < kExtendedFrameSize) return;
     stats.headers_seen++;
 
-    const bool legacy_ok = tools::check_crc16(buffer.data(), kLegacyFrameSize);
-    bool extended_ok = false;
-    if (buffer.size() >= kExtendedFrameSize) {
-      extended_ok = tools::check_crc16(buffer.data(), kExtendedFrameSize);
-    }
-
+    const bool extended_ok = tools::check_crc16(buffer.data(), kExtendedFrameSize);
     if (extended_ok) {
       stats.extended_ok++;
       parse_extended_frame(buffer.data(), frame);
@@ -172,21 +144,8 @@ void parse_stream(std::vector<uint8_t> & buffer, DiagStats & stats, FrameSnapsho
       continue;
     }
 
-    if (legacy_ok) {
-      stats.legacy_ok++;
-      parse_legacy_frame(buffer.data(), frame);
-      buffer.erase(buffer.begin(), buffer.begin() + static_cast<long>(kLegacyFrameSize));
-      continue;
-    }
-
-    if (buffer.size() >= kExtendedFrameSize) {
-      stats.legacy_crc_fail++;
-      stats.extended_crc_fail++;
-      buffer.erase(buffer.begin());
-      continue;
-    }
-
-    return;
+    stats.extended_crc_fail++;
+    buffer.erase(buffer.begin());
   }
 }
 
@@ -360,27 +319,22 @@ int main(int argc, char * argv[])
     if (now - last_summary_t >= std::chrono::milliseconds(summary_ms)) {
       const auto d_tx = stats.tx_ok - last_stats.tx_ok;
       const auto d_bytes = stats.bytes - last_stats.bytes;
-      const auto d_ok28 = stats.legacy_ok - last_stats.legacy_ok;
       const auto d_ok49 = stats.extended_ok - last_stats.extended_ok;
-      const auto d_crc28 = stats.legacy_crc_fail - last_stats.legacy_crc_fail;
       const auto d_crc49 = stats.extended_crc_fail - last_stats.extended_crc_fail;
 
       std::printf(
-        "[diag][%dms] port=%s tx=%llu(+%llu) bytes=%llu(+%llu) ok28=%llu(+%llu) ok49=%llu(+%llu) crc28=%llu(+%llu) crc49=%llu(+%llu) age=%.0fms\n",
+        "[diag][%dms] port=%s tx=%llu(+%llu) bytes=%llu(+%llu) ok49=%llu(+%llu) crc49=%llu(+%llu) age=%.0fms\n",
         summary_ms, opened_port.c_str(), static_cast<unsigned long long>(stats.tx_ok),
         static_cast<unsigned long long>(d_tx), static_cast<unsigned long long>(stats.bytes),
-        static_cast<unsigned long long>(d_bytes), static_cast<unsigned long long>(stats.legacy_ok),
-        static_cast<unsigned long long>(d_ok28), static_cast<unsigned long long>(stats.extended_ok),
+        static_cast<unsigned long long>(d_bytes), static_cast<unsigned long long>(stats.extended_ok),
         static_cast<unsigned long long>(d_ok49),
-        static_cast<unsigned long long>(stats.legacy_crc_fail),
-        static_cast<unsigned long long>(d_crc28),
         static_cast<unsigned long long>(stats.extended_crc_fail),
         static_cast<unsigned long long>(d_crc49), age_ms(frame.t));
 
       if (frame.valid) {
         std::printf(
           "[frame] proto=%s yaw=%.2fdeg pitch=%.2fdeg roll=%.2fdeg yaw_odom=%.3f pitch_odom=%.3f yaw_vel=%.3f pitch_vel=%.3f color=%u reset=%u robot_id=%u\n",
-          frame.extended ? "49B" : "28B", frame.yaw * kRad2Deg, frame.pitch * kRad2Deg,
+          "49B", frame.yaw * kRad2Deg, frame.pitch * kRad2Deg,
           frame.roll * kRad2Deg, frame.yaw_odom, frame.pitch_odom, frame.yaw_vel, frame.pitch_vel,
           frame.detect_color, frame.reset_tracker, frame.robot_id);
       }
@@ -399,16 +353,15 @@ int main(int argc, char * argv[])
   }
 
   std::printf(
-    "done: tx_ok=%llu tx_exc=%llu bytes=%llu ok28=%llu ok49=%llu crc28=%llu crc49=%llu read_exc=%llu\n",
+    "done: tx_ok=%llu tx_exc=%llu bytes=%llu ok49=%llu crc49=%llu read_exc=%llu\n",
     static_cast<unsigned long long>(stats.tx_ok), static_cast<unsigned long long>(stats.tx_exc),
-    static_cast<unsigned long long>(stats.bytes), static_cast<unsigned long long>(stats.legacy_ok),
+    static_cast<unsigned long long>(stats.bytes),
     static_cast<unsigned long long>(stats.extended_ok),
-    static_cast<unsigned long long>(stats.legacy_crc_fail),
     static_cast<unsigned long long>(stats.extended_crc_fail),
     static_cast<unsigned long long>(stats.read_exception));
   std::fflush(stdout);
 
-  if (require_rx && (stats.legacy_ok + stats.extended_ok == 0)) {
+  if (require_rx && stats.extended_ok == 0) {
     std::fprintf(stderr, "require-rx enabled but no valid rx frame observed.\n");
     return 2;
   }

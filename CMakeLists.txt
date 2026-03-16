@@ -115,12 +115,6 @@ target_link_libraries(auto_aim_ui_tune ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io
 add_executable(gimbal_ui_test diagnostics/gimbal/gimbal_ui_test.cpp)
 target_link_libraries(gimbal_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 
-add_executable(hero_gimbal_ui_test diagnostics/gimbal/hero_gimbal_ui_test.cpp)
-target_link_libraries(hero_gimbal_ui_test ${OpenCV_LIBS} fmt::fmt tools io)
-
-add_executable(usb_aim_rx_test diagnostics/gimbal/usb_aim_rx_test.cpp)
-target_link_libraries(usb_aim_rx_test ${OpenCV_LIBS} fmt::fmt tools io)
-
 add_executable(gimbal_serial_probe diagnostics/gimbal/gimbal_serial_probe.cpp)
 target_link_libraries(gimbal_serial_probe ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 
@@ -167,8 +161,6 @@ set_test_output(dm_test system)
 set_diag_output(auto_aim_ui_test auto_aim)
 set_diag_output(auto_aim_ui_tune auto_aim)
 set_diag_output(gimbal_ui_test gimbal)
-set_diag_output(hero_gimbal_ui_test gimbal)
-set_diag_output(usb_aim_rx_test gimbal)
 set_diag_output(gimbal_serial_probe gimbal)
 set_diag_output(gimbal_link_diag_test gimbal)
 

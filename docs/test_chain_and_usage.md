@@ -68,8 +68,7 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 
 说明：
 
-- 该链路默认使用非英雄协议（`0xA5` 下发 + `0x5A` 回传），并兼容 28B/49B 回传帧。
-- `hero_gimbal_ui_test`、`usb_aim_rx_test` 属于英雄链路，非英雄车调试时不建议混用。
+- 该链路默认使用非英雄协议（`0xA5` 下发 + `0x5A` 回传），回传帧为 49B。
 
 ### 2.2 车的自瞄闭环（在线）
 
@@ -151,7 +150,7 @@ sudo ./diagnostics/camera/diagnose.sh release
 - `ros2`（仅 ROS2 依赖满足时编译）：`publish_test`, `subscribe_test`, `topic_loop_test`
 - 联调诊断（`build/bin/diag`）：
 - `auto_aim`: `auto_aim_ui_test`, `auto_aim_ui_tune`
-- `gimbal`: `gimbal_ui_test`, `gimbal_link_diag_test`, `gimbal_serial_probe`, `hero_gimbal_ui_test`, `usb_aim_rx_test`
+- `gimbal`: `gimbal_ui_test`, `gimbal_link_diag_test`, `gimbal_serial_probe`
 
 ## 4. 常见问题
 

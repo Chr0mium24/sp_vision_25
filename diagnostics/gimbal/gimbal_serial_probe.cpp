@@ -21,14 +21,12 @@ using namespace std::chrono_literals;
 namespace
 {
 constexpr uint8_t kHeader = 0x5A;
-constexpr size_t kLegacyFrameSize = 28;
 constexpr size_t kExtendedFrameSize = 49;
 constexpr double kRad2Deg = 57.29577951308232;
 
 struct FrameSnapshot
 {
   bool valid = false;
-  bool extended = false;
   uint8_t detect_color = 0;
   uint8_t reset_tracker = 0;
   uint8_t robot_id = 0;
@@ -52,14 +50,10 @@ struct ProbeStats
   uint64_t bytes = 0;
   uint64_t drop_bytes = 0;
   uint64_t headers_seen = 0;
-  uint64_t legacy_ok = 0;
   uint64_t extended_ok = 0;
-  uint64_t legacy_crc_fail = 0;
   uint64_t extended_crc_fail = 0;
 
   bool has_fail_sample = false;
-  uint16_t last_legacy_crc_rx = 0;
-  uint16_t last_legacy_crc_calc = 0;
   uint16_t last_extended_crc_rx = 0;
   uint16_t last_extended_crc_calc = 0;
   std::string last_fail_prefix;
@@ -135,28 +129,9 @@ bool open_first_available(
   return false;
 }
 
-void parse_legacy_frame(const uint8_t * frame, FrameSnapshot & out)
-{
-  out.valid = true;
-  out.extended = false;
-  const uint8_t flags = frame[1];
-  out.detect_color = flags & 0x01;
-  out.reset_tracker = (flags >> 1) & 0x01;
-  out.roll = unpack_float(frame + 2);
-  out.pitch = unpack_float(frame + 6);
-  out.yaw = unpack_float(frame + 10);
-  out.yaw_odom = 0.0f;
-  out.pitch_odom = 0.0f;
-  out.yaw_vel = 0.0f;
-  out.pitch_vel = 0.0f;
-  out.robot_id = 0;
-  out.t = std::chrono::steady_clock::now();
-}
-
 void parse_extended_frame(const uint8_t * frame, FrameSnapshot & out)
 {
   out.valid = true;
-  out.extended = true;
   const uint8_t flags = frame[1];
   out.detect_color = flags & 0x01;
   out.reset_tracker = (flags >> 1) & 0x01;
@@ -191,15 +166,10 @@ void parse_stream(
       buffer.erase(buffer.begin(), it);
     }
 
-    if (buffer.size() < kLegacyFrameSize) return;
+    if (buffer.size() < kExtendedFrameSize) return;
     stats.headers_seen++;
 
-    const bool legacy_ok = tools::check_crc16(buffer.data(), kLegacyFrameSize);
-    bool extended_ok = false;
-    if (buffer.size() >= kExtendedFrameSize) {
-      extended_ok = tools::check_crc16(buffer.data(), kExtendedFrameSize);
-    }
-
+    const bool extended_ok = tools::check_crc16(buffer.data(), kExtendedFrameSize);
     if (extended_ok) {
       stats.extended_ok++;
       parse_extended_frame(buffer.data(), frame);
@@ -207,29 +177,13 @@ void parse_stream(
       continue;
     }
 
-    if (legacy_ok) {
-      stats.legacy_ok++;
-      parse_legacy_frame(buffer.data(), frame);
-      buffer.erase(buffer.begin(), buffer.begin() + static_cast<long>(kLegacyFrameSize));
-      continue;
-    }
-
-    if (buffer.size() >= kExtendedFrameSize) {
-      stats.legacy_crc_fail++;
-      stats.extended_crc_fail++;
-      stats.has_fail_sample = true;
-      stats.last_legacy_crc_calc = tools::get_crc16(buffer.data(), kLegacyFrameSize - 2);
-      stats.last_legacy_crc_rx = static_cast<uint16_t>(
-        buffer[kLegacyFrameSize - 2] | (static_cast<uint16_t>(buffer[kLegacyFrameSize - 1]) << 8));
-      stats.last_extended_crc_calc = tools::get_crc16(buffer.data(), kExtendedFrameSize - 2);
-      stats.last_extended_crc_rx = static_cast<uint16_t>(
-        buffer[kExtendedFrameSize - 2] | (static_cast<uint16_t>(buffer[kExtendedFrameSize - 1]) << 8));
-      stats.last_fail_prefix = hex_prefix(buffer.data(), kExtendedFrameSize, fail_hex_len);
-      buffer.erase(buffer.begin());
-      continue;
-    }
-
-    return;
+    stats.extended_crc_fail++;
+    stats.has_fail_sample = true;
+    stats.last_extended_crc_calc = tools::get_crc16(buffer.data(), kExtendedFrameSize - 2);
+    stats.last_extended_crc_rx = static_cast<uint16_t>(
+      buffer[kExtendedFrameSize - 2] | (static_cast<uint16_t>(buffer[kExtendedFrameSize - 1]) << 8));
+    stats.last_fail_prefix = hex_prefix(buffer.data(), kExtendedFrameSize, fail_hex_len);
+    buffer.erase(buffer.begin());
   }
 }
 
@@ -373,24 +327,21 @@ int main(int argc, char * argv[])
       auto d_zero = stats.read_zero - last_stats.read_zero;
       auto d_drop = stats.drop_bytes - last_stats.drop_bytes;
       auto d_headers = stats.headers_seen - last_stats.headers_seen;
-      auto d_ok28 = stats.legacy_ok - last_stats.legacy_ok;
       auto d_ok49 = stats.extended_ok - last_stats.extended_ok;
-      auto d_crc28 = stats.legacy_crc_fail - last_stats.legacy_crc_fail;
       auto d_crc49 = stats.extended_crc_fail - last_stats.extended_crc_fail;
 
       std::printf(
-        "[probe][%dms] port=%s bytes=%llu reads=%llu zero=%llu drop=%llu hdr=%llu ok28=%llu ok49=%llu crc28=%llu crc49=%llu frame_age=%.0fms data_age=%.0fms\n",
+        "[probe][%dms] port=%s bytes=%llu reads=%llu zero=%llu drop=%llu hdr=%llu ok49=%llu crc49=%llu frame_age=%.0fms data_age=%.0fms\n",
         summary_ms, serial.isOpen() ? opened_port.c_str() : "<closed>",
         static_cast<unsigned long long>(d_bytes), static_cast<unsigned long long>(d_reads),
         static_cast<unsigned long long>(d_zero), static_cast<unsigned long long>(d_drop),
-        static_cast<unsigned long long>(d_headers), static_cast<unsigned long long>(d_ok28),
-        static_cast<unsigned long long>(d_ok49), static_cast<unsigned long long>(d_crc28),
+        static_cast<unsigned long long>(d_headers), static_cast<unsigned long long>(d_ok49),
         static_cast<unsigned long long>(d_crc49), age_ms(frame.t), age_ms(t_last_data));
 
       if (frame.valid) {
         std::printf(
           "[frame] proto=%s yaw=%.2fdeg pitch=%.2fdeg roll=%.2fdeg yaw_odom=%.3f pitch_odom=%.3f yaw_vel=%.3f pitch_vel=%.3f color=%u reset=%u robot_id=%u\n",
-          frame.extended ? "49B" : "28B", frame.yaw * kRad2Deg, frame.pitch * kRad2Deg,
+          "49B", frame.yaw * kRad2Deg, frame.pitch * kRad2Deg,
           frame.roll * kRad2Deg, frame.yaw_odom, frame.pitch_odom, frame.yaw_vel, frame.pitch_vel,
           frame.detect_color, frame.reset_tracker, frame.robot_id);
       } else if (!last_chunk_hex.empty()) {
@@ -399,8 +350,7 @@ int main(int argc, char * argv[])
 
       if (stats.has_fail_sample) {
         std::printf(
-          "[fail] crc28(rx/calc)=0x%04X/0x%04X crc49(rx/calc)=0x%04X/0x%04X prefix=%s\n",
-          stats.last_legacy_crc_rx, stats.last_legacy_crc_calc, stats.last_extended_crc_rx,
+          "[fail] crc49(rx/calc)=0x%04X/0x%04X prefix=%s\n", stats.last_extended_crc_rx,
           stats.last_extended_crc_calc, stats.last_fail_prefix.c_str());
       }
 
@@ -420,12 +370,11 @@ int main(int argc, char * argv[])
   }
 
   std::printf(
-    "done total: open_ok=%llu open_fail=%llu bytes=%llu reads=%llu zero=%llu drop=%llu ok28=%llu ok49=%llu crc28=%llu crc49=%llu read_exc=%llu\n",
+    "done total: open_ok=%llu open_fail=%llu bytes=%llu reads=%llu zero=%llu drop=%llu ok49=%llu crc49=%llu read_exc=%llu\n",
     static_cast<unsigned long long>(stats.open_ok), static_cast<unsigned long long>(stats.open_fail),
     static_cast<unsigned long long>(stats.bytes), static_cast<unsigned long long>(stats.read_calls),
     static_cast<unsigned long long>(stats.read_zero), static_cast<unsigned long long>(stats.drop_bytes),
-    static_cast<unsigned long long>(stats.legacy_ok), static_cast<unsigned long long>(stats.extended_ok),
-    static_cast<unsigned long long>(stats.legacy_crc_fail),
+    static_cast<unsigned long long>(stats.extended_ok),
     static_cast<unsigned long long>(stats.extended_crc_fail),
     static_cast<unsigned long long>(stats.read_exception));
   return 0;

@@ -15,17 +15,9 @@ namespace io
 {
 namespace
 {
-constexpr size_t kLegacyFrameSize = 28;
 constexpr size_t kExtendedFrameSize = sizeof(GimbalToVision);
 
 static_assert(kExtendedFrameSize == 49, "Unexpected GimbalToVision size.");
-
-float unpack_float(const uint8_t * p)
-{
-  float value = 0.0f;
-  std::memcpy(&value, p, sizeof(float));
-  return value;
-}
 
 std::string hex_prefix(const uint8_t * data, size_t len, size_t max_len = 16)
 {
@@ -228,7 +220,7 @@ void Gimbal::read_thread()
     std::array<uint8_t, kExtendedFrameSize> frame{};
     frame[0] = rx_data_.header;
 
-    if (!read(frame.data() + 1, kLegacyFrameSize - 1)) {
+    if (!read(frame.data() + 1, kExtendedFrameSize - 1)) {
       error_count++;
       {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -237,38 +229,24 @@ void Gimbal::read_thread()
       continue;
     }
 
-    bool is_legacy = tools::check_crc16(frame.data(), kLegacyFrameSize);
-    bool is_extended = false;
-
-    if (!is_legacy) {
-      if (!read(frame.data() + kLegacyFrameSize, kExtendedFrameSize - kLegacyFrameSize)) {
-        error_count++;
-        {
-          std::lock_guard<std::mutex> lock(mutex_);
-          rx_stats_.short_read++;
-        }
-        continue;
-      }
-      is_extended = tools::check_crc16(frame.data(), kExtendedFrameSize);
-    }
-
-    if (!is_legacy && !is_extended) {
+    bool is_extended = tools::check_crc16(frame.data(), kExtendedFrameSize);
+    if (!is_extended) {
       error_count++;
-      auto calc_crc_legacy = tools::get_crc16(frame.data(), kLegacyFrameSize - 2);
-      auto rx_crc_legacy = static_cast<uint16_t>(
-        frame[kLegacyFrameSize - 2] | (static_cast<uint16_t>(frame[kLegacyFrameSize - 1]) << 8));
+      auto calc_crc = tools::get_crc16(frame.data(), kExtendedFrameSize - 2);
+      auto rx_crc = static_cast<uint16_t>(
+        frame[kExtendedFrameSize - 2] | (static_cast<uint16_t>(frame[kExtendedFrameSize - 1]) << 8));
       {
         std::lock_guard<std::mutex> lock(mutex_);
         rx_stats_.crc_fail++;
         rx_stats_.consecutive_crc_fail++;
-        rx_stats_.last_rx_crc = rx_crc_legacy;
-        rx_stats_.last_calc_crc = calc_crc_legacy;
+        rx_stats_.last_rx_crc = rx_crc;
+        rx_stats_.last_calc_crc = calc_crc;
       }
       auto snap = rx_stats();
       if (snap.crc_fail != last_crc_sample && snap.crc_fail % 200 == 1) {
         last_crc_sample = snap.crc_fail;
         tools::logger()->warn(
-          "[Gimbal] CRC fail x{} (legacy_crc rx=0x{:04X} calc=0x{:04X}) frame_prefix=[{}]",
+          "[Gimbal] CRC fail x{} (crc49 rx=0x{:04X} calc=0x{:04X}) frame_prefix=[{}]",
           snap.crc_fail, snap.last_rx_crc, snap.last_calc_crc,
           hex_prefix(frame.data(), kExtendedFrameSize));
       }
@@ -282,23 +260,15 @@ void Gimbal::read_thread()
     float yaw_vel = 0.0f, pitch_vel = 0.0f;
     uint8_t robot_id = 0;
 
-    if (is_extended) {
-      std::memcpy(&rx_data_, frame.data(), sizeof(rx_data_));
-      yaw = rx_data_.yaw;
-      pitch = rx_data_.pitch;
-      roll = rx_data_.roll;
-      yaw_odom = rx_data_.yaw_odom;
-      pitch_odom = rx_data_.pitch_odom;
-      yaw_vel = rx_data_.yaw_vel;
-      pitch_vel = rx_data_.pitch_vel;
-      robot_id = rx_data_.robot_id;
-    } else {
-      const uint8_t flags = frame[1];
-      (void)flags;
-      roll = unpack_float(frame.data() + 2);
-      pitch = unpack_float(frame.data() + 6);
-      yaw = unpack_float(frame.data() + 10);
-    }
+    std::memcpy(&rx_data_, frame.data(), sizeof(rx_data_));
+    yaw = rx_data_.yaw;
+    pitch = rx_data_.pitch;
+    roll = rx_data_.roll;
+    yaw_odom = rx_data_.yaw_odom;
+    pitch_odom = rx_data_.pitch_odom;
+    yaw_vel = rx_data_.yaw_vel;
+    pitch_vel = rx_data_.pitch_vel;
+    robot_id = rx_data_.robot_id;
 
     // Euler to Quaternion (Z-Y-X convolution: Yaw-Pitch-Roll)
     Eigen::Quaterniond q = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()) *
