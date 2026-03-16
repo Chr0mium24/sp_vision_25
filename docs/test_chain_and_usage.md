@@ -75,35 +75,27 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 
 目标：跑通相机 + 云台 + 自瞄主流程闭环。
 
-主程序：
+推荐入口：
 
-- `auto_aim_ui_test`（在线联调）
-- `standard`（比赛主链路）
+- `diagnostics/auto_aim/diagnose.sh`（完整说明见 [docs/diagnose/auto_aim_diagnose.md](diagnose/auto_aim_diagnose.md)）
 
 调用示例：
 
 ```bash
-# TUI模式（默认）
-./build/bin/diag/auto_aim/auto_aim_ui_test configs/standard3.yaml
-
-# 带图像窗口
-./build/bin/diag/auto_aim/auto_aim_ui_test configs/standard3.yaml --show=true
+./diagnostics/auto_aim/diagnose.sh armor-rec configs/standard3.yaml
+./diagnostics/auto_aim/diagnose.sh armor-box configs/standard3.yaml
 ```
 
-说明：`auto_aim_ui_test` 与 `standard` 均复用 `tasks/auto_aim/auto_aim_runtime.*`，测试链路和主链路核心计算保持一致。
+说明：`auto_aim_ui_test` 与 `standard` 均复用 `tasks/auto_aim/auto_aim_runtime.*`，联调链路与主链路核心计算保持一致。
 
 ### 2.3 自瞄调参（在线 + 导出参数）
 
 目标：在线调参并导出新 YAML 配置。
 
-主程序：
-
-- `auto_aim_ui_tune`
-
 调用示例：
 
 ```bash
-./build/bin/diag/auto_aim/auto_aim_ui_tune configs/standard3.yaml --show=true
+./diagnostics/auto_aim/diagnose.sh armor-tune configs/standard3.yaml
 ```
 
 关键交互：
@@ -116,15 +108,11 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 
 目标：离线验证打符识别/解算/瞄准逻辑。
 
-主程序：
-
-- `auto_power_rune_test`（由 `auto_buff_test` 重命名）
-
 调用示例：
 
 ```bash
-# input-path 传“前缀”，程序会读取 <prefix>.avi 和 <prefix>.txt
-./build/bin/tests/auto_buff/auto_power_rune_test --config-path=configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+./diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+./diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
 ```
 
 说明：该测试是离线数据回放，不依赖真实云台在线回传。
