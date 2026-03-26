@@ -37,6 +37,7 @@ Usage:
 Actions:
   list            Show auto_aim/power_rune diagnose binary status
   armor-box       Online armor detect + draw boxes (GUI)
+  armor-intent    Online armor detect + show intended yaw/pitch without sending control
   armor-rec       Online armor recognition status (TUI, no GUI)
   armor-tune      Online armor tuning + export yaml (GUI)
   armor-offline   Offline armor replay test (input-prefix -> <prefix>.avi/.txt)
@@ -50,6 +51,7 @@ Actions:
 Examples:
   diagnostics/auto_aim/diagnose.sh list
   diagnostics/auto_aim/diagnose.sh armor-box configs/standard3.yaml
+  diagnostics/auto_aim/diagnose.sh armor-intent configs/standard3.yaml
   diagnostics/auto_aim/diagnose.sh armor-rec configs/standard3.yaml
   diagnostics/auto_aim/diagnose.sh armor-tune configs/standard3.yaml
   diagnostics/auto_aim/diagnose.sh armor-offline configs/demo.yaml assets/demo/demo --start-index=0 --end-index=0
@@ -141,6 +143,15 @@ run_armor_box() {
     "${AUTO_AIM_UI_TEST}" "${CONFIG}" "$@"
   else
     "${AUTO_AIM_UI_TEST}" "${CONFIG}" --show=true "$@"
+  fi
+}
+
+run_armor_intent() {
+  ensure_bin "${AUTO_AIM_UI_TEST}"
+  if has_show_arg "$@"; then
+    "${AUTO_AIM_UI_TEST}" "${CONFIG}" --no-send=true "$@"
+  else
+    "${AUTO_AIM_UI_TEST}" "${CONFIG}" --show=true --no-send=true "$@"
   fi
 }
 
@@ -330,6 +341,7 @@ fi
 case "${ACTION}" in
   list) run_list "$@" ;;
   armor-box) run_armor_box "$@" ;;
+  armor-intent) run_armor_intent "$@" ;;
   armor-rec) run_armor_rec "$@" ;;
   armor-tune) run_armor_tune "$@" ;;
   armor-offline) run_armor_offline "$@" ;;

@@ -147,24 +147,28 @@ KeyEvent read_key()
 
 void print_tui(
   const UiState & ui, const io::GimbalState & gs, const Eigen::Vector3d & ypr_deg,
-  const io::Command & command, size_t target_count, const std::string & tracker_state, double dt)
+  const io::Command & command, size_t target_count, const std::string & tracker_state, double dt,
+  bool no_send, double send_yaw_deg, double send_pitch_deg, double delta_yaw_deg,
+  double delta_pitch_deg)
 {
   std::fputs("\033[2J\033[H", stdout);
   std::printf(
     "Auto Aim UI Test\n"
-    "dt: %.1fms  tracking:%d  fric:%d  fire_mode:%u(%s)  pulse:%d\n"
+    "dt: %.1fms  tracking:%d  fric:%d  fire_mode:%u(%s)  pulse:%d  no_send:%d\n"
     "bullet_speed: %.2f (step %.2f)  offset_step: %.2fdeg\n"
     "offset (deg): yaw:%+.2f  pitch:%+.2f\n"
     "cmd   (deg): yaw:%+.2f  pitch:%+.2f  control:%d  targets:%zu  state:%s\n"
+    "send  (deg): yaw:%+.2f  pitch:%+.2f  delta_to_fb: yaw:%+.2f  pitch:%+.2f\n"
     "fb    (deg): yaw:%+.2f  pitch:%+.2f  roll:%+.2f\n"
     "fb    (rad): yaw:%+.3f  pitch:%+.3f  roll:%+.3f  yaw_vel:%+.3f  pitch_vel:%+.3f\n"
     "Keys: q quit | w/s or Up/Down pitch_offset +/- | a/d or Left/Right yaw_offset -/+ | [/] step\n"
     "      z/x bullet_speed -/+ | ,/. speed_step | 0 reset_offset | p reset_speed | c tracking | r fric\n"
     "      1 off 2 ready 3 single 4 fire | f toggle fire | space single pulse\n",
     dt * 1e3, ui.tracking ? 1 : 0, ui.fric_on ? 1 : 0, ui.fire_mode,
-    fire_mode_name(ui.fire_mode), ui.fire_pulse ? 1 : 0, ui.bullet_speed, ui.speed_step,
+    fire_mode_name(ui.fire_mode), ui.fire_pulse ? 1 : 0, no_send ? 1 : 0, ui.bullet_speed, ui.speed_step,
     ui.offset_step_deg, ui.yaw_offset_deg, ui.pitch_offset_deg, command.yaw * 57.3,
     command.pitch * 57.3, command.control ? 1 : 0, target_count, tracker_state.c_str(),
+    send_yaw_deg, send_pitch_deg, delta_yaw_deg, delta_pitch_deg,
     ypr_deg[0], ypr_deg[1], ypr_deg[2], gs.yaw, gs.pitch, gs.roll, gs.yaw_vel, gs.pitch_vel);
   std::fflush(stdout);
 }
@@ -174,13 +178,15 @@ void print_tui(
 const std::string keys =
   "{help h usage ? |      | 输出命令行参数说明}"
   "{@config-path   | configs/standard3.yaml | 位置参数，yaml配置文件路径 }"
-  "{show s         | false  | 是否显示调试窗口}";
+  "{show s         | false  | 是否显示调试窗口}"
+  "{no-send        | false  | 只计算目标角，不下发给云台}";
 
 int main(int argc, char * argv[])
 {
   cv::CommandLineParser cli(argc, argv, keys);
   auto config_path = cli.get<std::string>(0);
   bool show = cli.get<bool>("show");
+  bool no_send = cli.get<bool>("no-send");
 
   if (cli.has("help") || config_path.empty()) {
     cli.printMessage();
@@ -232,6 +238,10 @@ int main(int argc, char * argv[])
     double pitch_offset = ui.pitch_offset_deg / 57.3;
     double send_yaw = command.yaw + yaw_offset;
     double send_pitch = command.pitch + pitch_offset;
+    double send_yaw_deg = send_yaw * 57.3;
+    double send_pitch_deg = send_pitch * 57.3;
+    double delta_yaw_deg = send_yaw_deg - gs.yaw * 57.3;
+    double delta_pitch_deg = send_pitch_deg - gs.pitch * 57.3;
 
     if (ui.fire_pulse && now >= ui.fire_pulse_until) ui.fire_pulse = false;
 
@@ -244,10 +254,12 @@ int main(int argc, char * argv[])
     if (!plan.tracking) fire_cmd = static_cast<uint8_t>(FireMode::Off);
     plan.fire = fire_cmd;
     plan.fric_on = ui.fric_on ? 1 : 0;
-    gimbal.send(plan);
+    if (!no_send) gimbal.send(plan);
 
     Eigen::Vector3d ypr_deg = tools::eulers(q, 2, 1, 0) * 57.3;
-    print_tui(ui, gs, ypr_deg, command, targets.size(), tracker_state, dt);
+    print_tui(
+      ui, gs, ypr_deg, command, targets.size(), tracker_state, dt, no_send, send_yaw_deg,
+      send_pitch_deg, delta_yaw_deg, delta_pitch_deg);
 
     int key = -1;
     auto ev = read_key();
@@ -281,9 +293,16 @@ int main(int argc, char * argv[])
       tools::draw_text(
         img,
         fmt::format(
-          "spd:{:.2f} off_y:{:+.2f} off_p:{:+.2f} fire:{}",
-          ui.bullet_speed, ui.yaw_offset_deg, ui.pitch_offset_deg, fire_mode_name(ui.fire_mode)),
+          "spd:{:.2f} off_y:{:+.2f} off_p:{:+.2f} fire:{} no_send:{}",
+          ui.bullet_speed, ui.yaw_offset_deg, ui.pitch_offset_deg, fire_mode_name(ui.fire_mode),
+          no_send ? 1 : 0),
         {10, 60}, {255, 255, 0}, 0.8, 2);
+      tools::draw_text(
+        img,
+        fmt::format(
+          "send y:{:+.2f} p:{:+.2f} d_fb y:{:+.2f} p:{:+.2f}",
+          send_yaw_deg, send_pitch_deg, delta_yaw_deg, delta_pitch_deg),
+        {10, 90}, {0, 255, 255}, 0.8, 2);
 
       cv::resize(img, img, {}, 0.5, 0.5);
       cv::imshow("Auto Aim UI Test", img);
@@ -337,7 +356,7 @@ int main(int argc, char * argv[])
   stop.pitch = 0;
   stop.fire = 0;
   stop.fric_on = 0;
-  gimbal.send(stop);
+  if (!no_send) gimbal.send(stop);
 
   return 0;
 }

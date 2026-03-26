@@ -8,6 +8,8 @@ cd "${REPO_ROOT}"
 BIN_DIR="${REPO_ROOT}/build/bin/diag/gimbal"
 LINK_DIAG="${BIN_DIR}/gimbal_link_diag_test"
 UI_TEST="${BIN_DIR}/gimbal_ui_test"
+AXIS_DIAG="${BIN_DIR}/gimbal_axis_diag_test"
+MANUAL_AXIS_DIAG="${BIN_DIR}/gimbal_manual_axis_diag_test"
 SERIAL_PROBE="${BIN_DIR}/gimbal_serial_probe"
 
 ACTION="${1:-}"
@@ -35,6 +37,8 @@ Actions:
   watch          Continuous read mode (nogui)
   control        Interactive control mode
   script-control Scripted control mode (5s, no-input)
+  axis           Small-step axis mapping diagnose
+  manual-axis    Read-only manual movement diagnose
   port-info      Show serial-by-id and udev info of com_port in config
   help           Show this message
 
@@ -44,6 +48,8 @@ Examples:
   diagnostics/gimbal/diagnose.sh probe-raw
   diagnostics/gimbal/diagnose.sh scan configs/standard3.yaml
   diagnostics/gimbal/diagnose.sh snapshot configs/standard3.yaml --wait-valid-ms=2500
+  diagnostics/gimbal/diagnose.sh axis configs/standard3.yaml --step-deg=5
+  diagnostics/gimbal/diagnose.sh manual-axis configs/standard3.yaml
 EOF
 }
 
@@ -123,6 +129,16 @@ run_script_control() {
     --yaw-deg=3 --pitch-deg=-1 --tracking=1 --fric-on=1 --fire-mode=1 "$@"
 }
 
+run_axis() {
+  ensure_bin "${AXIS_DIAG}"
+  "${AXIS_DIAG}" "${CONFIG}" "$@"
+}
+
+run_manual_axis() {
+  ensure_bin "${MANUAL_AXIS_DIAG}"
+  "${MANUAL_AXIS_DIAG}" "${CONFIG}" "$@"
+}
+
 run_port_info() {
   echo "[diagnose] /dev/serial/by-id"
   ls -l /dev/serial/by-id 2>/dev/null || echo "  (no /dev/serial/by-id)"
@@ -158,6 +174,8 @@ case "${ACTION}" in
   watch) run_watch "$@" ;;
   control) run_control "$@" ;;
   script-control) run_script_control "$@" ;;
+  axis) run_axis "$@" ;;
+  manual-axis) run_manual_axis "$@" ;;
   port-info) run_port_info "$@" ;;
   help|-h|--help) usage ;;
   *)
