@@ -10,6 +10,7 @@
 #include <thread>
 #include <tuple>
 
+#include "gimbal_protocol.hpp"
 #include "serial/serial.h"
 #include "tools/thread_safe_queue.hpp"
 
@@ -56,8 +57,6 @@ struct __attribute__((packed)) VisionToGimbal
 
 static_assert(sizeof(VisionToGimbal) <= 64);
 
-#include "gimbal_protocol.hpp"
-
 enum class GimbalMode
 {
   IDLE,        // 空闲
@@ -86,7 +85,7 @@ struct GimbalRxStats
   uint64_t crc_fail = 0;
   uint64_t short_read = 0;
   uint64_t header_mismatch = 0;
-  uint_t reconnect_count = 0;
+  uint64_t reconnect_count = 0;
   uint64_t consecutive_crc_fail = 0;
   uint8_t last_header = 0;
   uint16_t last_rx_crc = 0;

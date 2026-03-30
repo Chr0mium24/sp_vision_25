@@ -9,6 +9,7 @@
 #include <fmt/core.h>
 
 #include "tools/logger.hpp"
+#include "tools/math_tools.hpp"
 #include "tools/yaml.hpp"
 
 namespace io
