@@ -181,7 +181,7 @@ find_package(sp_msgs QUIET)
 
 if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND)
     add_executable(gimbal_ros2_bridge diagnostics/gimbal/gimbal_ros2_bridge.cpp)
-    target_link_libraries(gimbal_ros2_bridge fmt::fmt yaml-cpp tools io)
+    target_link_libraries(gimbal_ros2_bridge ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
     ament_target_dependencies(gimbal_ros2_bridge rclcpp std_msgs)
     set_diag_output(gimbal_ros2_bridge gimbal)
 else()
