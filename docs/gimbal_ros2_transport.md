@@ -94,6 +94,13 @@ Suggested helper script:
 
 - `scripts/run_gimbal_ros2_bridge.sh`
 
+Example:
+
+```bash
+./build.sh
+./scripts/run_gimbal_ros2_bridge.sh configs/standard3.yaml --ports=/dev/ttyACM0
+```
+
 ## Build Strategy
 
 ### Without ROS2

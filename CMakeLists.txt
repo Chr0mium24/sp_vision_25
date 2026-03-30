@@ -19,14 +19,13 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR})
 
-
 add_subdirectory(tools)
 add_subdirectory(io)
 add_subdirectory(tasks/auto_aim)
 add_subdirectory(tasks/auto_buff)
 add_subdirectory(tasks/omniperception)
 
-####################src###################
+#################### src ####################
 add_executable(standard src/standard.cpp)
 add_executable(mt_standard src/mt_standard.cpp)
 add_executable(standard_mpc src/standard_mpc.cpp)
@@ -47,7 +46,7 @@ target_link_libraries(auto_buff_debug_mpc ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_
 target_link_libraries(uav ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim auto_buff tools io)
 target_link_libraries(uav_debug ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
 
-##################calibration################
+################## calibration ##################
 add_executable(capture calibration/capture.cpp)
 add_executable(calibrate_camera calibration/calibrate_camera.cpp)
 add_executable(calibrate_handeye calibration/calibrate_handeye.cpp)
@@ -60,7 +59,7 @@ target_link_libraries(calibrate_handeye ${OpenCV_LIBS} fmt::fmt yaml-cpp tools)
 target_link_libraries(calibrate_robotworld_handeye ${OpenCV_LIBS} fmt::fmt yaml-cpp tools)
 target_link_libraries(split_video ${OpenCV_LIBS} fmt::fmt tools)
 
-##################tests##################
+################## tests ##################
 add_executable(auto_aim_test tests/auto_aim/auto_aim_test.cpp)
 add_executable(auto_power_rune_test tests/auto_buff/auto_power_rune_test.cpp)
 add_executable(camera_detect_test tests/camera/camera_detect_test.cpp)
@@ -77,7 +76,6 @@ add_executable(usbcamera_detect_test tests/camera/usbcamera_detect_test.cpp)
 add_executable(usbcamera_test tests/camera/usbcamera_test.cpp)
 add_executable(handeye_test tests/camera/handeye_test.cpp)
 add_executable(dm_test tests/system/dm_test.cpp)
-
 
 target_link_libraries(auto_aim_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 target_link_libraries(auto_power_rune_test ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_buff tools io)
@@ -96,7 +94,6 @@ target_link_libraries(usbcamera_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 target_link_libraries(handeye_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 target_link_libraries(dm_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 
-
 add_executable(gimbal_test tests/gimbal/gimbal_test.cpp)
 target_link_libraries(gimbal_test ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
 
@@ -106,7 +103,7 @@ target_link_libraries(planner_test ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim too
 add_executable(planner_test_offline tests/planner/planner_test_offline.cpp)
 target_link_libraries(planner_test_offline ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
 
-##################diagnostics##################
+################## diagnostics ##################
 add_executable(auto_aim_ui_test diagnostics/auto_aim/auto_aim_ui_test.cpp)
 add_executable(auto_aim_ui_tune diagnostics/auto_aim/auto_aim_ui_tune.cpp)
 target_link_libraries(auto_aim_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
@@ -174,7 +171,6 @@ set_diag_output(gimbal_manual_axis_diag_test gimbal)
 set_diag_output(gimbal_serial_probe gimbal)
 set_diag_output(gimbal_link_diag_test gimbal)
 
-# 检查 ROS 环境
 find_package(ament_cmake QUIET)
 find_package(rclcpp QUIET)
 find_package(std_msgs QUIET)
@@ -183,11 +179,16 @@ find_package(cv_bridge QUIET)
 find_package(rosidl_typesupport_cpp QUIET)
 find_package(sp_msgs QUIET)
 
+if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND)
+    add_executable(gimbal_ros2_bridge diagnostics/gimbal/gimbal_ros2_bridge.cpp)
+    target_link_libraries(gimbal_ros2_bridge fmt::fmt yaml-cpp tools io)
+    ament_target_dependencies(gimbal_ros2_bridge rclcpp std_msgs)
+    set_diag_output(gimbal_ros2_bridge gimbal)
+else()
+    message(STATUS "ROS2 core environment not found, skipping gimbal_ros2_bridge.")
+endif()
 
-
-# 只有在找到 ROS 环境时才会添加 sentry 和 publish_test
 if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND rosidl_typesupport_cpp_FOUND AND sp_msgs_FOUND)
-    # 编译 sentry 和 publish_test
     add_executable(sentry src/sentry.cpp)
     add_executable(sentry_bp src/sentry_bp.cpp)
     add_executable(sentry_debug src/sentry_debug.cpp)
@@ -208,5 +209,5 @@ if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND rosidl_typesupport_
     set_test_output(subscribe_test ros2)
     set_test_output(topic_loop_test ros2)
 else()
-    message(STATUS "ROS2 environment not found, skipping ROS2-related code.")
+    message(STATUS "sp_msgs ROS2 environment not found, skipping sentry-specific ROS2 targets.")
 endif()
