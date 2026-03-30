@@ -289,7 +289,8 @@ private:
       try {
         serial_.setPort(port);
         serial_.setBaudrate(static_cast<uint32_t>(options_.baud));
-        serial_.setTimeout(serial::Timeout::simpleTimeout(20));
+        serial::Timeout timeout = serial::Timeout::simpleTimeout(20);
+        serial_.setTimeout(timeout);
         serial_.open();
         RCLCPP_INFO(get_logger(), "serial connected on %s", port.c_str());
         return;
