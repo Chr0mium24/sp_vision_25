@@ -13,6 +13,11 @@
 #include "serial/serial.h"
 #include "tools/thread_safe_queue.hpp"
 
+#ifdef SP_HAS_ROS2_CORE
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/u_int8_multi_array.hpp>
+#endif
+
 namespace io
 {
 struct __attribute__((packed)) GimbalToVision
@@ -50,6 +55,8 @@ struct __attribute__((packed)) VisionToGimbal
 };
 
 static_assert(sizeof(VisionToGimbal) <= 64);
+
+#include "gimbal_protocol.hpp"
 
 enum class GimbalMode
 {
@@ -109,6 +116,8 @@ public:
 
 private:
   serial::Serial serial_;
+  bool use_ros2_transport_ = false;
+  bool serial_open_ = false;
 
   std::thread thread_;
   std::atomic<bool> quit_ = false;
@@ -123,9 +132,24 @@ private:
   tools::ThreadSafeQueue<std::tuple<Eigen::Quaterniond, std::chrono::steady_clock::time_point>>
     queue_{1000};
 
+  std::string gimbal_to_vision_topic_ = "/gimbal_to_vision";
+  std::string vision_to_gimbal_topic_ = "/vision_to_gimbal";
+  std::string ros2_node_name_ = "sp_vision_gimbal_transport";
+
+#ifdef SP_HAS_ROS2_CORE
+  std::shared_ptr<rclcpp::Node> ros2_node_;
+  rclcpp::Publisher<std_msgs::msg::UInt8MultiArray>::SharedPtr ros2_tx_publisher_;
+  rclcpp::Subscription<std_msgs::msg::UInt8MultiArray>::SharedPtr ros2_rx_subscription_;
+  std::thread ros2_spin_thread_;
+  bool owns_rclcpp_context_ = false;
+#endif
+
   bool read(uint8_t * buffer, size_t size);
   void read_thread();
+  void handle_rx_packet(
+    const GimbalToVision & packet, const std::chrono::steady_clock::time_point & timestamp);
   void reconnect();
+  void send_packet(const VisionToGimbal & packet);
 };
 
 }  // namespace io

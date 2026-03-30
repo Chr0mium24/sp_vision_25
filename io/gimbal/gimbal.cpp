@@ -1,14 +1,14 @@
 #include "gimbal.hpp"
 
 #include <array>
+#include <cctype>
 #include <cstring>
+#include <cstdlib>
 #include <sstream>
 
 #include <fmt/core.h>
 
-#include "tools/crc.hpp"
 #include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
 #include "tools/yaml.hpp"
 
 namespace io
@@ -30,25 +30,112 @@ std::string hex_prefix(const uint8_t * data, size_t len, size_t max_len = 16)
   if (len > n) oss << " ...";
   return oss.str();
 }
+
+std::string to_lower_copy(std::string value)
+{
+  for (char & c : value) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
+  return value;
+}
+
+Eigen::Quaterniond quaternion_from_packet(const GimbalToVision & packet)
+{
+  return Eigen::AngleAxisd(packet.yaw, Eigen::Vector3d::UnitZ()) *
+         Eigen::AngleAxisd(packet.pitch, Eigen::Vector3d::UnitY()) *
+         Eigen::AngleAxisd(packet.roll, Eigen::Vector3d::UnitX());
+}
+
 }  // namespace
 
 Gimbal::Gimbal(const std::string & config_path, bool wait_for_first_q)
 {
   auto yaml = tools::load(config_path);
-  auto com_port = tools::read<std::string>(yaml, "com_port");
 
-  try {
-    serial_.setPort(com_port);
-    serial_.setBaudrate(115200);
-    serial::Timeout timeout = serial::Timeout::simpleTimeout(100);
-    serial_.setTimeout(timeout);
-    serial_.open();
-  } catch (const std::exception & e) {
-    tools::logger()->error("[Gimbal] Failed to open serial: {}", e.what());
-    exit(1);
+  if (yaml["gimbal_to_vision_topic"]) {
+    gimbal_to_vision_topic_ = yaml["gimbal_to_vision_topic"].as<std::string>();
+  }
+  if (yaml["vision_to_gimbal_topic"]) {
+    vision_to_gimbal_topic_ = yaml["vision_to_gimbal_topic"].as<std::string>();
+  }
+  if (yaml["gimbal_ros2_node_name"]) {
+    ros2_node_name_ = yaml["gimbal_ros2_node_name"].as<std::string>();
   }
 
-  thread_ = std::thread(&Gimbal::read_thread, this);
+  std::string transport = "serial";
+  if (yaml["gimbal_transport"]) {
+    transport = to_lower_copy(yaml["gimbal_transport"].as<std::string>());
+  }
+  use_ros2_transport_ = (transport == "ros2");
+
+  if (use_ros2_transport_) {
+#ifdef SP_HAS_ROS2_CORE
+    if (!rclcpp::ok()) {
+      rclcpp::init(0, nullptr);
+      owns_rclcpp_context_ = true;
+    }
+
+    ros2_node_ = std::make_shared<rclcpp::Node>(ros2_node_name_);
+    ros2_tx_publisher_ =
+      ros2_node_->create_publisher<std_msgs::msg::UInt8MultiArray>(vision_to_gimbal_topic_, 10);
+    ros2_rx_subscription_ = ros2_node_->create_subscription<std_msgs::msg::UInt8MultiArray>(
+      gimbal_to_vision_topic_, 10,
+      [this](const std_msgs::msg::UInt8MultiArray::SharedPtr msg) {
+        if (msg->data.size() != sizeof(GimbalToVision)) {
+          RCLCPP_WARN(
+            ros2_node_->get_logger(), "Ignore %s with invalid size %zu, expected %zu",
+            gimbal_to_vision_topic_.c_str(), msg->data.size(), sizeof(GimbalToVision));
+          return;
+        }
+
+        auto packet = from_bytes<GimbalToVision>(msg->data.data());
+        if (packet.header != kGimbalToVisionHeader) {
+          RCLCPP_WARN(
+            ros2_node_->get_logger(), "Ignore %s with bad header 0x%02X",
+            gimbal_to_vision_topic_.c_str(), packet.header);
+          return;
+        }
+        if (!validate_crc16(packet)) {
+          RCLCPP_WARN(
+            ros2_node_->get_logger(), "Ignore %s with invalid CRC", gimbal_to_vision_topic_.c_str());
+          return;
+        }
+
+        handle_rx_packet(packet, std::chrono::steady_clock::now());
+      });
+
+    ros2_spin_thread_ = std::thread([this]() {
+      while (!quit_ && rclcpp::ok()) {
+        rclcpp::spin_some(ros2_node_);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+      }
+    });
+
+    tools::logger()->info(
+      "[Gimbal] ROS2 transport enabled: rx={} tx={}", gimbal_to_vision_topic_,
+      vision_to_gimbal_topic_);
+#else
+    tools::logger()->error(
+      "[Gimbal] gimbal_transport=ros2 but ROS2 support was not compiled into this binary.");
+    exit(1);
+#endif
+  } else {
+    auto com_port = tools::read<std::string>(yaml, "com_port");
+
+    try {
+      serial_.setPort(com_port);
+      serial_.setBaudrate(115200);
+      serial::Timeout timeout = serial::Timeout::simpleTimeout(100);
+      serial_.setTimeout(timeout);
+      serial_.open();
+      serial_open_ = true;
+    } catch (const std::exception & e) {
+      tools::logger()->error("[Gimbal] Failed to open serial: {}", e.what());
+      exit(1);
+    }
+
+    thread_ = std::thread(&Gimbal::read_thread, this);
+  }
 
   if (wait_for_first_q) {
     queue_.pop();
@@ -62,7 +149,16 @@ Gimbal::~Gimbal()
 {
   quit_ = true;
   if (thread_.joinable()) thread_.join();
-  serial_.close();
+#ifdef SP_HAS_ROS2_CORE
+  if (ros2_spin_thread_.joinable()) ros2_spin_thread_.join();
+  if (owns_rclcpp_context_ && rclcpp::ok()) {
+    rclcpp::shutdown();
+  }
+#endif
+  if (serial_open_) {
+    serial_.close();
+    serial_open_ = false;
+  }
 }
 
 GimbalMode Gimbal::mode() const
@@ -121,49 +217,49 @@ Eigen::Quaterniond Gimbal::q(std::chrono::steady_clock::time_point t)
   }
 }
 
-void Gimbal::send(io::VisionToGimbal VisionToGimbal)
+void Gimbal::send(io::VisionToGimbal packet)
 {
-  tx_data_.tracking = VisionToGimbal.tracking;
-  tx_data_.pitch = VisionToGimbal.pitch;
-  tx_data_.yaw = VisionToGimbal.yaw;
-  tx_data_.fire = VisionToGimbal.fire;
-  tx_data_.fric_on = VisionToGimbal.fric_on;
-  tx_data_.checksum = tools::get_crc16(
-    reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_) - sizeof(tx_data_.checksum));
-
-  try {
-    serial_.write(reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_));
-    std::string hex;
-    uint8_t * p = reinterpret_cast<uint8_t *>(&tx_data_);
-    for (size_t i = 0; i < sizeof(tx_data_); ++i) {
-      hex += fmt::format("{:02X} ", p[i]);
-    }
-    // tools::logger()->info("[Gimbal] TX: {}", hex);
-  } catch (const std::exception & e) {
-    tools::logger()->warn("[Gimbal] Failed to write serial: {}", e.what());
-  }
+  packet.header = kVisionToGimbalHeader;
+  refresh_crc16(packet);
+  send_packet(packet);
 }
 
 void Gimbal::send(
   bool control, bool fire, float yaw, float yaw_vel, float yaw_acc, float pitch, float pitch_vel,
   float pitch_acc)
 {
-  tx_data_.tracking = control;
-  tx_data_.yaw = yaw;
-  tx_data_.pitch = pitch;
-  tx_data_.fire = fire ? 1 : 0;
-  tx_data_.fric_on = control ? 1 : 0;
-  tx_data_.checksum = tools::get_crc16(
-    reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_) - sizeof(tx_data_.checksum));
+  (void)yaw_vel;
+  (void)yaw_acc;
+  (void)pitch_vel;
+  (void)pitch_acc;
+
+  VisionToGimbal packet{};
+  packet.header = kVisionToGimbalHeader;
+  packet.tracking = control ? 1 : 0;
+  packet.yaw = yaw;
+  packet.pitch = pitch;
+  packet.fire = fire ? 1 : 0;
+  packet.fric_on = control ? 1 : 0;
+  refresh_crc16(packet);
+  send_packet(packet);
+}
+
+void Gimbal::send_packet(const VisionToGimbal & packet)
+{
+  tx_data_ = packet;
+
+  if (use_ros2_transport_) {
+#ifdef SP_HAS_ROS2_CORE
+    std_msgs::msg::UInt8MultiArray message;
+    auto bytes = to_bytes(packet);
+    message.data.assign(bytes.begin(), bytes.end());
+    ros2_tx_publisher_->publish(message);
+#endif
+    return;
+  }
 
   try {
-    serial_.write(reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_));
-    std::string hex;
-    uint8_t * p = reinterpret_cast<uint8_t *>(&tx_data_);
-    for (size_t i = 0; i < sizeof(tx_data_); ++i) {
-      hex += fmt::format("{:02X} ", p[i]);
-    }
-    // tools::logger()->info("[Gimbal] TX: {}", hex);
+    serial_.write(reinterpret_cast<const uint8_t *>(&packet), sizeof(packet));
   } catch (const std::exception & e) {
     tools::logger()->warn("[Gimbal] Failed to write serial: {}", e.what());
   }
@@ -174,9 +270,36 @@ bool Gimbal::read(uint8_t * buffer, size_t size)
   try {
     return serial_.read(buffer, size) == size;
   } catch (const std::exception & e) {
-    // tools::logger()->warn("[Gimbal] Failed to read serial: {}", e.what());
+    (void)e;
     return false;
   }
+}
+
+void Gimbal::handle_rx_packet(
+  const GimbalToVision & packet, const std::chrono::steady_clock::time_point & timestamp)
+{
+  rx_data_ = packet;
+
+  auto q = quaternion_from_packet(packet).normalized();
+  queue_.push({q, timestamp});
+
+  std::lock_guard<std::mutex> lock(mutex_);
+  state_.yaw = packet.yaw;
+  state_.yaw_vel = packet.yaw_vel;
+  state_.pitch = packet.pitch;
+  state_.pitch_vel = packet.pitch_vel;
+  state_.roll = packet.roll;
+  state_.yaw_odom = packet.yaw_odom;
+  state_.pitch_odom = packet.pitch_odom;
+  state_.bullet_speed = 0;
+  state_.bullet_count = 0;
+  state_.robot_id = packet.robot_id;
+  mode_ = GimbalMode::AUTO_AIM;
+
+  rx_stats_.good_frames++;
+  rx_stats_.consecutive_crc_fail = 0;
+  rx_stats_.last_good_frame_time = timestamp;
+  rx_stats_.last_header = packet.header;
 }
 
 void Gimbal::read_thread()
@@ -209,7 +332,7 @@ void Gimbal::read_thread()
       continue;
     }
 
-    if (rx_data_.header != 0x5A) {
+    if (rx_data_.header != kGimbalToVisionHeader) {
       std::lock_guard<std::mutex> lock(mutex_);
       rx_stats_.header_mismatch++;
       rx_stats_.last_header = rx_data_.header;
@@ -229,17 +352,15 @@ void Gimbal::read_thread()
       continue;
     }
 
-    bool is_extended = tools::check_crc16(frame.data(), kExtendedFrameSize);
-    if (!is_extended) {
+    auto packet = from_bytes<GimbalToVision>(frame.data());
+    if (!validate_crc16(packet)) {
       error_count++;
-      auto calc_crc = tools::get_crc16(frame.data(), kExtendedFrameSize - 2);
-      auto rx_crc = static_cast<uint16_t>(
-        frame[kExtendedFrameSize - 2] | (static_cast<uint16_t>(frame[kExtendedFrameSize - 1]) << 8));
+      auto calc_crc = compute_crc16(packet);
       {
         std::lock_guard<std::mutex> lock(mutex_);
         rx_stats_.crc_fail++;
         rx_stats_.consecutive_crc_fail++;
-        rx_stats_.last_rx_crc = rx_crc;
+        rx_stats_.last_rx_crc = packet.checksum;
         rx_stats_.last_calc_crc = calc_crc;
       }
       auto snap = rx_stats();
@@ -254,48 +375,7 @@ void Gimbal::read_thread()
     }
 
     error_count = 0;
-
-    float yaw = 0.0f, pitch = 0.0f, roll = 0.0f;
-    float yaw_odom = 0.0f, pitch_odom = 0.0f;
-    float yaw_vel = 0.0f, pitch_vel = 0.0f;
-    uint8_t robot_id = 0;
-
-    std::memcpy(&rx_data_, frame.data(), sizeof(rx_data_));
-    yaw = rx_data_.yaw;
-    pitch = rx_data_.pitch;
-    roll = rx_data_.roll;
-    yaw_odom = rx_data_.yaw_odom;
-    pitch_odom = rx_data_.pitch_odom;
-    yaw_vel = rx_data_.yaw_vel;
-    pitch_vel = rx_data_.pitch_vel;
-    robot_id = rx_data_.robot_id;
-
-    // Euler to Quaternion (Z-Y-X convolution: Yaw-Pitch-Roll)
-    Eigen::Quaterniond q = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()) *
-                           Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) *
-                           Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX());
-
-    queue_.push({q, t});
-
-    {
-      std::lock_guard<std::mutex> lock(mutex_);
-      state_.yaw = yaw;
-      state_.yaw_vel = yaw_vel;
-      state_.pitch = pitch;
-      state_.pitch_vel = pitch_vel;
-      state_.roll = roll;
-      state_.yaw_odom = yaw_odom;
-      state_.pitch_odom = pitch_odom;
-      state_.bullet_speed = 0;
-      state_.bullet_count = 0;
-      state_.robot_id = robot_id;
-      mode_ = GimbalMode::AUTO_AIM;
-
-      rx_stats_.good_frames++;
-      rx_stats_.consecutive_crc_fail = 0;
-      rx_stats_.last_good_frame_time = t;
-      rx_stats_.last_header = 0x5A;
-    }
+    handle_rx_packet(packet, t);
 
     auto now = std::chrono::steady_clock::now();
     if (tools::delta_time(now, last_stats_log) >= 1.0) {
@@ -328,12 +408,14 @@ void Gimbal::reconnect()
     tools::logger()->warn("[Gimbal] Reconnecting serial, attempt {}/{}...", i + 1, max_retry_count);
     try {
       serial_.close();
+      serial_open_ = false;
       std::this_thread::sleep_for(std::chrono::seconds(1));
     } catch (...) {
     }
 
     try {
-      serial_.open();  // 尝试重新打开
+      serial_.open();
+      serial_open_ = true;
       queue_.clear();
       tools::logger()->info("[Gimbal] Reconnected serial successfully.");
       break;
