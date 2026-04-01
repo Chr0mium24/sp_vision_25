@@ -122,7 +122,7 @@ ROS2 transport：
 
 - `gimbal_transport = serial`
 - `gimbal_to_vision_topic = /gimbal_to_vision`
-- `vision_to_gimbal_topic = /vision_to_gimbal`
+- `vision_to_gimbal_topic = /visionToGimbal`
 - `gimbal_ros2_node_name = sp_vision_gimbal_transport`
 
 ## 9. Planner / Buff 参数

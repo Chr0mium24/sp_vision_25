@@ -30,7 +30,7 @@ struct BridgeOptions
   int reopen_ms = 1000;
   int loop_sleep_ms = 2;
   std::string gimbal_to_vision_topic = "/gimbal_to_vision";
-  std::string vision_to_gimbal_topic = "/vision_to_gimbal";
+  std::string vision_to_gimbal_topic = "/visionToGimbal";
   std::string node_name = "sp_vision_gimbal_bridge";
 };
 
@@ -72,7 +72,7 @@ void print_usage()
   std::printf(
     "Usage: gimbal_ros2_bridge [config_path] [--ports=/dev/ttyACM0,/dev/ttyUSB0] [--baud=115200]\n"
     "                         [--gimbal-to-vision-topic=/gimbal_to_vision]\n"
-    "                         [--vision-to-gimbal-topic=/vision_to_gimbal]\n"
+    "                         [--vision-to-gimbal-topic=/visionToGimbal]\n"
     "                         [--node-name=sp_vision_gimbal_bridge] [--reopen-ms=1000]\n"
     "                         [--loop-sleep-ms=2]\n");
 }
@@ -132,7 +132,7 @@ void load_config_overrides(BridgeOptions & options)
   if (options.gimbal_to_vision_topic == "/gimbal_to_vision" && yaml["gimbal_to_vision_topic"]) {
     options.gimbal_to_vision_topic = yaml["gimbal_to_vision_topic"].as<std::string>();
   }
-  if (options.vision_to_gimbal_topic == "/vision_to_gimbal" && yaml["vision_to_gimbal_topic"]) {
+  if (options.vision_to_gimbal_topic == "/visionToGimbal" && yaml["vision_to_gimbal_topic"]) {
     options.vision_to_gimbal_topic = yaml["vision_to_gimbal_topic"].as<std::string>();
   }
   if (options.node_name == "sp_vision_gimbal_bridge" && yaml["gimbal_ros2_node_name"]) {

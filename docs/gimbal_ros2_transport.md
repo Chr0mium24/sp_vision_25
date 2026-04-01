@@ -8,7 +8,7 @@
 - optionally compile a ROS2 transport when ROS2 dependencies are available
 - allow the same upper-layer auto-aim code to work against either
   - a real serial port
-  - ROS2 topics `/gimbal_to_vision` and `/vision_to_gimbal`
+  - ROS2 topics `/gimbal_to_vision` and `/visionToGimbal`
 
 上层 API 保持不变：
 
@@ -39,7 +39,7 @@ The existing backend remains unchanged in behavior:
 当 ROS2 可用且运行时配置选择 `ros2` 时，`io::Gimbal` 会：
 
 - subscribe to `/gimbal_to_vision`
-- publish to `/vision_to_gimbal`
+- publish to `/visionToGimbal`
 - parse the incoming topic payload into the same `GimbalToVision` packet layout
 - serialize outgoing `VisionToGimbal` using the same packet layout
 
@@ -59,7 +59,7 @@ Reason:
 Topic contract:
 
 - `/gimbal_to_vision`: payload size must be `sizeof(io::GimbalToVision)`
-- `/vision_to_gimbal`: payload size must be `sizeof(io::VisionToGimbal)`
+- `/visionToGimbal`: payload size must be `sizeof(io::VisionToGimbal)`
 
 ## Runtime Config
 
@@ -68,7 +68,7 @@ Topic contract:
 ```yaml
 gimbal_transport: "serial"          # serial | ros2
 gimbal_to_vision_topic: "/gimbal_to_vision"
-vision_to_gimbal_topic: "/vision_to_gimbal"
+vision_to_gimbal_topic: "/visionToGimbal"
 gimbal_ros2_node_name: "sp_vision_gimbal_transport"
 ```
 
@@ -82,7 +82,7 @@ Behavior:
 仓库同时提供了一个 ROS2 bridge 程序，把真实串口桥接到这两个 topic：
 
 - read serial `GimbalToVision` packets and publish `/gimbal_to_vision`
-- subscribe to `/vision_to_gimbal` and write serial `VisionToGimbal`
+- subscribe to `/visionToGimbal` and write serial `VisionToGimbal`
 
 This lets a ROS2 navigation stack own the physical serial device while `sp_vision` consumes the mirrored topic transport.
 

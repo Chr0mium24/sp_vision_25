@@ -36,7 +36,7 @@
 ### 1. topic 名称
 
 - `/gimbal_to_vision`
-- `/vision_to_gimbal`
+- `/visionToGimbal`
 
 ### 2. topic 类型
 

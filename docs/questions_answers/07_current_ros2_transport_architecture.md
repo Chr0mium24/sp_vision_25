@@ -20,7 +20,7 @@ gimbal_transport: "ros2"
 且编译时带了 ROS2 support，`io::Gimbal` 会：
 
 - 订阅 `/gimbal_to_vision`
-- 发布 `/vision_to_gimbal`
+- 发布 `/visionToGimbal`
 
 见：
 
@@ -36,7 +36,7 @@ gimbal_transport: "ros2"
 `diagnostics/gimbal/gimbal_ros2_bridge.cpp` 当前实现的是：
 
 - 串口读 `GimbalToVision`，发布到 `/gimbal_to_vision`
-- 订阅 `/vision_to_gimbal`，收到后写串口
+- 订阅 `/visionToGimbal`，收到后写串口
 
 见：
 
@@ -50,7 +50,7 @@ gimbal_transport: "ros2"
 
 - topic 类型：`std_msgs/msg/UInt8MultiArray`
 - `/gimbal_to_vision` 载荷大小：`sizeof(GimbalToVision)`
-- `/vision_to_gimbal` 载荷大小：`sizeof(VisionToGimbal)`
+- `/visionToGimbal` 载荷大小：`sizeof(VisionToGimbal)`
 
 文档说明见：
 

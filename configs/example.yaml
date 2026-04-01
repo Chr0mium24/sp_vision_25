@@ -57,7 +57,7 @@ can_interface: "can0"
 com_port: "/dev/ttyACM0"
 gimbal_transport: "serial"  # serial | ros2
 gimbal_to_vision_topic: "/gimbal_to_vision"
-vision_to_gimbal_topic: "/vision_to_gimbal"
+vision_to_gimbal_topic: "/visionToGimbal"
 gimbal_ros2_node_name: "sp_vision_gimbal_transport"
 
 #####-----tracker参数-----#####

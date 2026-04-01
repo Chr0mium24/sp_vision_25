@@ -132,7 +132,7 @@ private:
     queue_{1000};
 
   std::string gimbal_to_vision_topic_ = "/gimbal_to_vision";
-  std::string vision_to_gimbal_topic_ = "/vision_to_gimbal";
+  std::string vision_to_gimbal_topic_ = "/visionToGimbal";
   std::string ros2_node_name_ = "sp_vision_gimbal_transport";
 
 #ifdef SP_HAS_ROS2_CORE
