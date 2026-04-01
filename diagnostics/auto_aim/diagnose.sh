@@ -39,6 +39,7 @@ Actions:
   armor-box       Online armor detect + draw boxes (GUI)
   armor-intent    Online armor detect + show intended yaw/pitch without sending control
   armor-rec       Online armor recognition status (TUI, no GUI)
+  armor-log       Online armor run + export jsonl log (pair with --duration-ms/--log-jsonl)
   armor-tune      Online armor tuning + export yaml (GUI)
   armor-offline   Offline armor replay test (input-prefix -> <prefix>.avi/.txt)
   rune-box        Offline power rune detect + draw boxes (input-prefix)
@@ -53,6 +54,7 @@ Examples:
   diagnostics/auto_aim/diagnose.sh armor-box configs/standard3.yaml
   diagnostics/auto_aim/diagnose.sh armor-intent configs/standard3.yaml
   diagnostics/auto_aim/diagnose.sh armor-rec configs/standard3.yaml
+  diagnostics/auto_aim/diagnose.sh armor-log configs/standard3.yaml --duration-ms=10000 --log-jsonl=logs/good.jsonl
   diagnostics/auto_aim/diagnose.sh armor-tune configs/standard3.yaml
   diagnostics/auto_aim/diagnose.sh armor-offline configs/demo.yaml assets/demo/demo --start-index=0 --end-index=0
   diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0
@@ -156,6 +158,11 @@ run_armor_intent() {
 }
 
 run_armor_rec() {
+  ensure_bin "${AUTO_AIM_UI_TEST}"
+  "${AUTO_AIM_UI_TEST}" "${CONFIG}" "$@"
+}
+
+run_armor_log() {
   ensure_bin "${AUTO_AIM_UI_TEST}"
   "${AUTO_AIM_UI_TEST}" "${CONFIG}" "$@"
 }
@@ -347,6 +354,7 @@ case "${ACTION}" in
   armor-box) run_armor_box "$@" ;;
   armor-intent) run_armor_intent "$@" ;;
   armor-rec) run_armor_rec "$@" ;;
+  armor-log) run_armor_log "$@" ;;
   armor-tune) run_armor_tune "$@" ;;
   armor-offline) run_armor_offline "$@" ;;
   rune-box) run_rune_box "$@" ;;

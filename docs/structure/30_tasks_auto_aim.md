@@ -35,7 +35,7 @@
 | `tasks/auto_aim/tracker.hpp` | 目标跟踪器声明。 |
 | `tasks/auto_aim/tracker.cpp` | 跟踪状态机、目标初始化、目标更新、切目标逻辑。 |
 | `tasks/auto_aim/aimer.hpp` | 传统自瞄瞄准器声明。 |
-| `tasks/auto_aim/aimer.cpp` | 选取可打装甲板、做时间补偿和弹道迭代，输出 yaw/pitch。 |
+| `tasks/auto_aim/aimer.cpp` | 选取可打装甲板、做时间补偿和弹道迭代，结合 `tools::Trajectory` 输出随距离/高差变化的 yaw/pitch。 |
 | `tasks/auto_aim/shooter.hpp` | 开火判定器声明。 |
 | `tasks/auto_aim/shooter.cpp` | 根据命令连续性、回授误差和自动开火开关决定是否真的开火。 |
 | `tasks/auto_aim/voter.hpp` | 计票器声明。 |
@@ -112,11 +112,34 @@
 
 ### 决策层
 
-- `Aimer::aim`：考虑图像处理延迟和弹道飞行时间，输出最终命令角。
+- `Aimer::aim`：考虑图像处理延迟、目标未来位置和弹道飞行时间，输出最终命令角。
 - `Aimer::choose_aim_point`：在多块装甲板里选“当前最值得打的”那一块。
 - `Shooter::shoot`：做保守开火判定，避免命令突变时误射。
 - `Planner::plan`：MPC 版本决策器，输出位置、速度、加速度和 fire 标志。
 - `Planner::get_trajectory`：从目标状态生成参考轨迹。
+
+### 弹道 pitch 是怎么来的
+
+这里的 `pitch` 不是固定值，也不是只由图像上下偏差直接决定。
+
+实际链路是：
+
+1. `Solver::solve` 先把目标解成三维位置 `xyz`
+2. `Aimer::aim` 取当前瞄准点，计算水平距离 `d` 和高差 `h`
+3. `tools::Trajectory(v0, d, h)` 根据子弹速度、距离和高差求飞行时间与弹道 `pitch`
+4. `Aimer::aim` 再加上 `pitch_offset` 输出最终命令
+
+所以：
+
+- 目标更远时，`pitch` 一般会更大
+- 目标更高时，`pitch` 也会更大
+- 如果目标在运动，`Aimer` 还会根据飞行时间继续迭代预测目标未来位置
+
+当前实现属于“基础弹道模型”：
+
+- 已考虑重力
+- 已考虑飞行时间
+- 当前 `tools::Trajectory` 默认不考虑空气阻力
 
 ### 多线程
 
@@ -130,4 +153,3 @@
 - `AimPoint`：Aimer 选中的具体瞄准点。
 - `RuntimeInput/RuntimeOutput`：主链路输入输出协议。
 - `Plan`：MPC 规划结果，包含控制量和导数信息。
-

@@ -64,7 +64,19 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 
 说明：适合远程终端，仅看识别状态和控制输出。
 
-### 3.5 装甲板在线调参（可导出 YAML）
+### 3.5 装甲板在线识别并导出 JSONL 日志
+
+```bash
+./diagnostics/auto_aim/diagnose.sh armor-log configs/standard3.yaml --duration-ms=10000 --log-jsonl=logs/car_good.jsonl
+```
+
+说明：
+
+- 适合做“正常车 / 异常车”对比采样。
+- 生成的 JSONL 包含 `command/send_yaw/send_pitch/feedback_yaw/feedback_pitch/tracker_state/armor_confidence` 等字段。
+- 若不传 `--log-jsonl`，程序会自动生成到 `logs/auto_aim_ui_test_*.jsonl`。
+
+### 3.6 装甲板在线调参（可导出 YAML）
 
 ```bash
 ./diagnostics/auto_aim/diagnose.sh armor-tune configs/standard3.yaml
@@ -76,7 +88,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 - `R` 导出新配置（文件名带时间戳）
 - `L` 开关日志（`logs/auto_aim_ui_*.jsonl`）
 
-### 3.6 装甲板离线回放
+### 3.7 装甲板离线回放
 
 ```bash
 ./diagnostics/auto_aim/diagnose.sh armor-offline configs/demo.yaml assets/demo/demo --start-index=0 --end-index=0
@@ -84,7 +96,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 
 说明：`input-prefix` 传前缀，程序读取 `<prefix>.avi` 和 `<prefix>.txt`。
 
-### 3.7 Power Rune 识别 + 画框（离线）
+### 3.8 Power Rune 识别 + 画框（离线）
 
 ```bash
 ./diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0
@@ -97,7 +109,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 - 程序会在窗口显示打符目标框、重投影结果和调试曲线。
 - 仓库当前未附带 `power_rune_demo` 示例数据，需要自行准备离线回放素材。
 
-### 3.8 Power Rune 调参（脚本交互）
+### 3.9 Power Rune 调参（脚本交互）
 
 ```bash
 ./diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0
@@ -115,7 +127,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 
 说明：`rune-tune` 会直接写回当前 `config.yaml`。
 
-### 3.9 Power Rune 在线调试（可选）
+### 3.10 Power Rune 在线调试（可选）
 
 ```bash
 ./diagnostics/auto_aim/diagnose.sh rune-online configs/standard3.yaml

@@ -1,13 +1,17 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <ctime>
+#include <filesystem>
 #include <fcntl.h>
+#include <fstream>
 #include <thread>
 #include <unistd.h>
 #include <termios.h>
 
 #include <Eigen/Geometry>
 #include <fmt/core.h>
+#include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>
 
 #include "io/camera.hpp"
@@ -116,6 +120,21 @@ const char * fire_mode_name(uint8_t mode)
   }
 }
 
+std::string timestamp_string()
+{
+  auto now = std::chrono::system_clock::now();
+  auto tt = std::chrono::system_clock::to_time_t(now);
+  std::tm tm{};
+#if defined(_WIN32)
+  localtime_s(&tm, &tt);
+#else
+  localtime_r(&tt, &tm);
+#endif
+  char buf[32];
+  std::strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", &tm);
+  return buf;
+}
+
 KeyEvent read_key()
 {
   unsigned char c = 0;
@@ -179,7 +198,9 @@ const std::string keys =
   "{help h usage ? |      | 输出命令行参数说明}"
   "{@config-path   | configs/standard3.yaml | 位置参数，yaml配置文件路径 }"
   "{show s         | false  | 是否显示调试窗口}"
-  "{no-send        | false  | 只计算目标角，不下发给云台}";
+  "{no-send        | false  | 只计算目标角，不下发给云台}"
+  "{duration-ms    | 0      | 运行时长(ms), 0为无限}"
+  "{log-jsonl      |        | 导出jsonl日志路径，留空则自动生成}";
 
 int main(int argc, char * argv[])
 {
@@ -187,6 +208,8 @@ int main(int argc, char * argv[])
   auto config_path = cli.get<std::string>(0);
   bool show = cli.get<bool>("show");
   bool no_send = cli.get<bool>("no-send");
+  int duration_ms = cli.get<int>("duration-ms");
+  std::string log_jsonl = cli.get<std::string>("log-jsonl");
 
   if (cli.has("help") || config_path.empty()) {
     cli.printMessage();
@@ -217,13 +240,31 @@ int main(int argc, char * argv[])
 
   cv::Mat img;
   std::chrono::steady_clock::time_point t;
-  auto last_loop = std::chrono::steady_clock::now();
+  auto start_t = std::chrono::steady_clock::now();
+  auto last_loop = start_t;
+
+  std::ofstream log_file;
+  std::string log_path;
+  if (!log_jsonl.empty() || duration_ms > 0) {
+    std::filesystem::create_directories("logs");
+    log_path =
+      log_jsonl.empty() ? fmt::format("logs/auto_aim_ui_test_{}.jsonl", timestamp_string()) : log_jsonl;
+    log_file.open(log_path, std::ios::out);
+    if (!log_file.is_open()) {
+      std::fprintf(stderr, "failed to open --log-jsonl: %s\n", log_path.c_str());
+    } else {
+      std::fprintf(stdout, "[auto_aim_ui_test] logging to %s\n", log_path.c_str());
+    }
+  }
 
   while (!exiter.exit()) {
+    auto now = std::chrono::steady_clock::now();
+    if (duration_ms > 0 && now - start_t >= std::chrono::milliseconds(duration_ms)) break;
+
     camera.read(img, t);
     if (img.empty()) continue;
 
-    auto now = std::chrono::steady_clock::now();
+    now = std::chrono::steady_clock::now();
     auto dt = tools::delta_time(now, last_loop);
     last_loop = now;
 
@@ -255,6 +296,56 @@ int main(int argc, char * argv[])
     plan.fire = fire_cmd;
     plan.fric_on = ui.fric_on ? 1 : 0;
     if (!no_send) gimbal.send(plan);
+
+    if (log_file.is_open()) {
+      nlohmann::json data;
+      data["t"] = tools::delta_time(now, start_t);
+      data["dt"] = dt;
+      data["target_count"] = targets.size();
+      data["tracker_state"] = tracker_state;
+      data["command_control"] = command.control;
+      data["command_shoot"] = command.shoot;
+      data["command_yaw"] = command.yaw;
+      data["command_pitch"] = command.pitch;
+      data["ui_tracking"] = ui.tracking;
+      data["ui_fric_on"] = ui.fric_on;
+      data["ui_fire_mode"] = ui.fire_mode;
+      data["ui_bullet_speed"] = ui.bullet_speed;
+      data["ui_yaw_offset_deg"] = ui.yaw_offset_deg;
+      data["ui_pitch_offset_deg"] = ui.pitch_offset_deg;
+      data["send_tracking"] = plan.tracking;
+      data["send_fire"] = plan.fire;
+      data["send_fric_on"] = plan.fric_on;
+      data["send_yaw"] = send_yaw;
+      data["send_pitch"] = send_pitch;
+      data["feedback_yaw"] = gs.yaw;
+      data["feedback_pitch"] = gs.pitch;
+      data["feedback_roll"] = gs.roll;
+      data["feedback_yaw_vel"] = gs.yaw_vel;
+      data["feedback_pitch_vel"] = gs.pitch_vel;
+      data["feedback_bullet_speed"] = gs.bullet_speed;
+      data["delta_yaw"] = send_yaw - gs.yaw;
+      data["delta_pitch"] = send_pitch - gs.pitch;
+      data["no_send"] = no_send;
+      if (!output.armors.empty()) {
+        const auto & armor = output.armors.front();
+        data["armor_confidence"] = armor.confidence;
+        data["armor_center_norm_x"] = armor.center_norm.x;
+        data["armor_center_norm_y"] = armor.center_norm.y;
+        data["armor_name"] = armor.name;
+        data["armor_type"] = armor.type;
+      }
+      auto aim_point = aimer.debug_aim_point;
+      data["aim_point_valid"] = aim_point.valid;
+      if (aim_point.valid) {
+        data["aim_x"] = aim_point.xyza[0];
+        data["aim_y"] = aim_point.xyza[1];
+        data["aim_z"] = aim_point.xyza[2];
+        data["aim_a"] = aim_point.xyza[3];
+      }
+      log_file << data.dump() << "\n";
+      log_file.flush();
+    }
 
     Eigen::Vector3d ypr_deg = tools::eulers(q, 2, 1, 0) * 57.3;
     print_tui(
@@ -357,6 +448,7 @@ int main(int argc, char * argv[])
   stop.fire = 0;
   stop.fric_on = 0;
   if (!no_send) gimbal.send(stop);
+  if (log_file.is_open()) log_file.close();
 
   return 0;
 }

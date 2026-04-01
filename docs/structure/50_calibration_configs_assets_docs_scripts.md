@@ -66,7 +66,12 @@
 | --- | --- |
 | `docs/calibration_workflow.md` | 标定工作流说明。 |
 | `docs/test_chain_and_usage.md` | 测试链路与使用说明。 |
+| `docs/auto_aim_transport_debug_workflow.md` | 自瞄传输链路排障说明，面向正常车/异常车对比分析。 |
 | `docs/gimbal_ros2_transport.md` | 云台 ROS2 传输设计与现状说明。 |
+| `docs/engineering_debug/README.md` | 工程排障文档索引。 |
+| `docs/engineering_debug/01_transport_chain_and_logs.md` | 自瞄传输链路、关键文件与日志导出说明。 |
+| `docs/engineering_debug/02_reference_vehicle_differences.md` | 正常车与异常车参考电控工程差异说明。 |
+| `docs/engineering_debug/03_duplicate_code_and_space_detection.md` | 重复实现整理，以及“空间检测”在本仓库中的对应模块说明。 |
 | `docs/diagnose/auto_aim_diagnose.md` | 自瞄诊断说明。 |
 | `docs/diagnose/camera_diagnose.md` | 相机诊断说明。 |
 | `docs/diagnose/gimbal_diagnose.md` | 云台诊断说明。 |

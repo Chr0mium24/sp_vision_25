@@ -87,6 +87,7 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 ```bash
 ./diagnostics/auto_aim/diagnose.sh armor-rec configs/standard3.yaml
 ./diagnostics/auto_aim/diagnose.sh armor-box configs/standard3.yaml
+./diagnostics/auto_aim/diagnose.sh armor-log configs/standard3.yaml --duration-ms=10000 --log-jsonl=logs/car_good.jsonl
 ```
 
 说明：`auto_aim_ui_test` 与 `standard` 均复用 `tasks/auto_aim/auto_aim_runtime.*`，联调链路与主链路核心计算保持一致。
