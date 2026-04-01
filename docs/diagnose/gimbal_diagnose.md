@@ -25,6 +25,8 @@
 | `watch` | 持续读姿态（只读） | `RX stats good` 持续增长 | `./diagnostics/gimbal/diagnose.sh watch` |
 | `control` | 交互控制模式 | 键控后反馈变化 | `./diagnostics/gimbal/diagnose.sh control` |
 | `script-control` | 无输入脚本控制（5s） | 回传姿态/统计有变化 | `./diagnostics/gimbal/diagnose.sh script-control` |
+| `axis` | 主动小角度运动，检查 yaw/pitch 轴映射 | 正负方向与预期一致 | `./diagnostics/gimbal/diagnose.sh axis configs/standard3.yaml --step-deg=5` |
+| `manual-axis` | 人手拨动云台，检查轴向和符号 | 手动转动时读数方向正确 | `./diagnostics/gimbal/diagnose.sh manual-axis` |
 | `port-info` | 打印配置端口和 udev 信息 | 端口存在且与设备 ID 对应 | `./diagnostics/gimbal/diagnose.sh port-info` |
 | `help` | 显示帮助 | - | `./diagnostics/gimbal/diagnose.sh help` |
 

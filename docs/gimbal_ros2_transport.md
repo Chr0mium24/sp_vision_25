@@ -1,8 +1,8 @@
-# Gimbal ROS2 Transport Design
+# Gimbal ROS2 Transport
 
-## Goal
+## Status
 
-Add a dual-backend transport for `io::Gimbal` inside `sp_vision`:
+当前仓库已经实现 `io::Gimbal` 的双后端传输：
 
 - keep the current serial transport as the default path
 - optionally compile a ROS2 transport when ROS2 dependencies are available
@@ -10,7 +10,7 @@ Add a dual-backend transport for `io::Gimbal` inside `sp_vision`:
   - a real serial port
   - ROS2 topics `/gimbal_to_vision` and `/vision_to_gimbal`
 
-The upper-layer API should stay stable:
+上层 API 保持不变：
 
 - `io::Gimbal::q(...)`
 - `io::Gimbal::mode()`
@@ -36,7 +36,7 @@ The existing backend remains unchanged in behavior:
 
 ### ROS2 backend
 
-When ROS2 is available and runtime config selects `ros2`, `io::Gimbal` should:
+当 ROS2 可用且运行时配置选择 `ros2` 时，`io::Gimbal` 会：
 
 - subscribe to `/gimbal_to_vision`
 - publish to `/vision_to_gimbal`
@@ -63,7 +63,7 @@ Topic contract:
 
 ## Runtime Config
 
-Add optional YAML keys:
+相关 YAML 键如下：
 
 ```yaml
 gimbal_transport: "serial"          # serial | ros2
@@ -79,18 +79,18 @@ Behavior:
 
 ## Bridge Program
 
-Provide a ROS2-enabled bridge executable that connects real serial to the two topics:
+仓库同时提供了一个 ROS2 bridge 程序，把真实串口桥接到这两个 topic：
 
 - read serial `GimbalToVision` packets and publish `/gimbal_to_vision`
 - subscribe to `/vision_to_gimbal` and write serial `VisionToGimbal`
 
 This lets a ROS2 navigation stack own the physical serial device while `sp_vision` consumes the mirrored topic transport.
 
-Suggested executable:
+可执行文件：
 
 - `gimbal_ros2_bridge`
 
-Suggested helper script:
+辅助脚本：
 
 - `scripts/run_gimbal_ros2_bridge.sh`
 
@@ -131,14 +131,14 @@ If `sp_msgs` is also available, continue compiling the existing navigation ROS2 
 
 This keeps old and new ROS2 paths independent.
 
-## Rollout Plan
+## Implemented Scope
 
-1. Document the design and config contract
-2. Extract reusable packet encode/decode helpers
-3. Add runtime-selectable `serial` and `ros2` transports behind `io::Gimbal`
-4. Add `gimbal_ros2_bridge`
-5. Add helper script and sample config updates
-6. Keep existing serial behavior as the default path
+当前已实现：
+
+1. `io::Gimbal` 运行时切换 `serial/ros2`
+2. `gimbal_ros2_bridge`
+3. `scripts/run_gimbal_ros2_bridge.sh`
+4. 示例配置字段：`gimbal_transport`、topic 名称、node 名称
 
 ## Future Work
 

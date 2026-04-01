@@ -55,8 +55,8 @@ Examples:
   diagnostics/auto_aim/diagnose.sh armor-rec configs/standard3.yaml
   diagnostics/auto_aim/diagnose.sh armor-tune configs/standard3.yaml
   diagnostics/auto_aim/diagnose.sh armor-offline configs/demo.yaml assets/demo/demo --start-index=0 --end-index=0
-  diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
-  diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+  diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0
+  diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0
   diagnostics/auto_aim/diagnose.sh rune-online configs/standard3.yaml
 EOF
 }
@@ -181,11 +181,13 @@ run_armor_offline() {
 
 run_rune_box() {
   ensure_bin "${POWER_RUNE_TEST}"
-  local input="assets/demo/power_rune_demo"
-  if [[ $# -gt 0 && "${1}" != --* ]]; then
-    input="${1}"
-    shift
+  if [[ $# -eq 0 || "${1}" == --* ]]; then
+    echo "[diagnose] rune-box requires an input prefix."
+    echo "[diagnose] Example: diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0"
+    exit 2
   fi
+  local input="${1}"
+  shift
   "${POWER_RUNE_TEST}" --config-path="${CONFIG}" "${input}" "$@"
 }
 
@@ -202,11 +204,13 @@ run_rune_online_mpc() {
 run_rune_tune() {
   ensure_bin "${POWER_RUNE_TEST}"
 
-  local input="assets/demo/power_rune_demo"
-  if [[ $# -gt 0 && "${1}" != --* ]]; then
-    input="${1}"
-    shift
+  if [[ $# -eq 0 || "${1}" == --* ]]; then
+    echo "[diagnose] rune-tune requires an input prefix."
+    echo "[diagnose] Example: diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0"
+    exit 2
   fi
+  local input="${1}"
+  shift
   local -a rune_args=("$@")
 
   local yaw pitch fire_gap predict_time

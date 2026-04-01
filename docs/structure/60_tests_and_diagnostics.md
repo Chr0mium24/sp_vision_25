@@ -27,7 +27,8 @@
 | `diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp` | 人手拨动云台时读取姿态，判断轴向与符号。 |
 | `diagnostics/gimbal/gimbal_serial_probe.cpp` | 原始串口字节流探针，检查是否能收到合法帧。 |
 | `diagnostics/gimbal/gimbal_link_diag_test.cpp` | 协议级链路诊断，验证收发与 CRC。 |
-| `diagnostics/gimbal/diagnose.sh` | 云台诊断脚本，统一封装 quick/probe/axis/watch 等动作。 |
+| `diagnostics/gimbal/gimbal_ros2_bridge.cpp` | ROS2 环境下的串口-话题桥接程序，桥接 `/gimbal_to_vision` 和 `/vision_to_gimbal`。 |
+| `diagnostics/gimbal/diagnose.sh` | 云台诊断脚本，统一封装 quick/probe/axis/manual-axis/watch/control 等动作。 |
 
 ## 60.5 `tests/auto_aim/`
 
@@ -80,6 +81,8 @@
 
 ## 60.11 `tests/ros2/`
 
+仅在找到 `ament_cmake/rclcpp/std_msgs/rosidl_typesupport_cpp/sp_msgs` 时编译。
+
 | 文件 | 作用 |
 | --- | --- |
 | `tests/ros2/publish_test.cpp` | ROS2 发布测试。 |
@@ -91,4 +94,3 @@
 - `src/` 负责“跑比赛”。
 - `diagnostics/` 负责“找到为什么跑不好”。
 - `tests/` 负责“在更小的闭环里复现问题”。
-

@@ -5,8 +5,7 @@
 ## 1. 编译与输出目录
 
 ```bash
-cmake -S . -B build
-cmake --build build -j"$(nproc)"
+./build.sh
 ```
 
 自动化测试可执行文件输出到：
@@ -39,6 +38,8 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 
 - `gimbal_link_diag_test`（非英雄协议快速诊断：可选发包+持续统计收包）
 - `gimbal_ui_test`（推荐，支持 `read/control` 两模式）
+- `gimbal_axis_diag_test`（主动小角度运动，检查 yaw/pitch 轴映射）
+- `gimbal_manual_axis_diag_test`（手动拨动云台，检查轴向和符号）
 - `gimbal_test`（基础连通性与发射节奏）
 - `gimbal_response_test`（响应分析）
 
@@ -49,6 +50,8 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 ./diagnostics/gimbal/diagnose.sh quick
 ./diagnostics/gimbal/diagnose.sh rxonly
 ./diagnostics/gimbal/diagnose.sh proto
+./diagnostics/gimbal/diagnose.sh axis configs/standard3.yaml --step-deg=5
+./diagnostics/gimbal/diagnose.sh manual-axis configs/standard3.yaml
 
 # 非英雄协议快速诊断：先看串口是否有字节、是否有有效帧（推荐先跑）
 ./build/bin/diag/gimbal/gimbal_link_diag_test configs/standard3.yaml --duration-ms=3000 --summary-ms=1000
@@ -111,11 +114,15 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 调用示例：
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
-./diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+./diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0
+./diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0
 ```
 
-说明：该测试是离线数据回放，不依赖真实云台在线回传。
+说明：
+
+- 该测试是离线数据回放，不依赖真实云台在线回传。
+- `input-prefix` 传前缀，程序读取 `<prefix>.avi` 和 `<prefix>.txt`。
+- 仓库当前未附带 `power_rune_demo` 示例数据，需要自行准备。
 
 ### 2.5 相机联通与预览（在线）
 
@@ -152,7 +159,8 @@ sudo ./diagnostics/camera/diagnose.sh release
 - 联调诊断（`build/bin/diag`）：
 - `auto_aim`: `auto_aim_ui_test`, `auto_aim_ui_tune`
 - `auto_buff`: `auto_buff_debug`, `auto_buff_debug_mpc`
-- `gimbal`: `gimbal_ui_test`, `gimbal_link_diag_test`, `gimbal_serial_probe`
+- `gimbal`: `gimbal_ui_test`, `gimbal_link_diag_test`, `gimbal_serial_probe`, `gimbal_axis_diag_test`, `gimbal_manual_axis_diag_test`
+- `gimbal`（仅 ROS2 core 依赖满足时编译）：`gimbal_ros2_bridge`
 
 ## 4. 常见问题
 

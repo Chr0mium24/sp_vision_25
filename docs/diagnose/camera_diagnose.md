@@ -136,6 +136,10 @@ sudo ./diagnostics/camera/diagnose.sh release --vidpid=2bdf:0001 --force
 ./diagnostics/camera/diagnose.sh handeye configs/handeye.yaml -d
 ```
 
+说明：
+
+- `configs/handeye.yaml` 现在作为模板配置提供，需按实际机器人修改相机、C 板和网格参数。
+
 ## 4. 排查建议
 
 - 工业相机无图像：先确认 SDK 安装、配置里的 `camera_name` 与设备匹配。

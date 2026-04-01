@@ -77,8 +77,14 @@ IMU型号：使用C板内置BMI088作为IMU\
 
 2. 编译：
     ```bash
-    cmake -B build
-    make -C build/ -j`nproc`
+    ./build.sh
+    ```
+
+    如需手动执行，也可使用：
+
+    ```bash
+    cmake -S . -B build
+    cmake --build build -j"$(nproc)"
     ```
 
 3. 运行demo:
@@ -118,6 +124,7 @@ IMU型号：使用C板内置BMI088作为IMU\
         ```
         ACTION=="add", KERNEL=="can0", RUN+="/sbin/ip link set can0 up type can bitrate 1000000"
         ACTION=="add", KERNEL=="can1", RUN+="/sbin/ip link set can1 up type can bitrate 1000000"
+        ```
 
 6. 使用GPU推理（可选）
     ```

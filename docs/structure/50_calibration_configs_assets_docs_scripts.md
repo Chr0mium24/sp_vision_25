@@ -36,6 +36,7 @@
 | `configs/ascento.yaml` | 特定平台/实验配置。 |
 | `configs/demo.yaml` | 离线演示/示例配置。 |
 | `configs/example.yaml` | 参数示例配置。 |
+| `configs/handeye.yaml` | `handeye_test` 模板配置，补充网格和延时参数。 |
 | `configs/mvs.yaml` | 相机或 SDK 相关配置。 |
 | `configs/camera.yaml` | 后相机/辅助相机配置。 |
 | `configs/calibration.yaml` | 标定流程参数。 |
@@ -57,6 +58,7 @@
 | `assets/best2-sim.onnx` | 其他实验/仿真模型。 |
 | `assets/standard_fanblade.jpg` | 打符相关静态图片素材。 |
 | `assets/demo/demo.avi` | 离线演示视频。 |
+| `assets/demo/demo.txt` | 与 `demo.avi` 配套的姿态时间戳文本。 |
 
 ## 50.5 `docs/`
 
@@ -64,6 +66,7 @@
 | --- | --- |
 | `docs/calibration_workflow.md` | 标定工作流说明。 |
 | `docs/test_chain_and_usage.md` | 测试链路与使用说明。 |
+| `docs/gimbal_ros2_transport.md` | 云台 ROS2 传输设计与现状说明。 |
 | `docs/diagnose/auto_aim_diagnose.md` | 自瞄诊断说明。 |
 | `docs/diagnose/camera_diagnose.md` | 相机诊断说明。 |
 | `docs/diagnose/gimbal_diagnose.md` | 云台诊断说明。 |
@@ -73,4 +76,4 @@
 | 文件 | 作用 |
 | --- | --- |
 | `scripts/prechange_backup.sh` | 改动前做快照备份、状态导出和烟雾检查。 |
-
+| `scripts/run_gimbal_ros2_bridge.sh` | 启动 `gimbal_ros2_bridge` 的辅助脚本。 |

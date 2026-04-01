@@ -44,7 +44,19 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 - 图像窗口里会显示目标框和重投影框
 - TUI 同时显示 `targets/state/cmd` 等关键状态
 
-### 3.3 装甲板在线识别（无 GUI）
+### 3.3 装甲板在线识别 + 意图输出（不下发控制）
+
+```bash
+./diagnostics/auto_aim/diagnose.sh armor-intent configs/standard3.yaml
+```
+
+说明：
+
+- 调用 `auto_aim_ui_test --show=true --no-send=true`
+- 适合联调前先看目标框、重投影和期望 yaw/pitch
+- 不会向下位机实际发送控制命令
+
+### 3.4 装甲板在线识别（无 GUI）
 
 ```bash
 ./diagnostics/auto_aim/diagnose.sh armor-rec configs/standard3.yaml
@@ -52,7 +64,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 
 说明：适合远程终端，仅看识别状态和控制输出。
 
-### 3.4 装甲板在线调参（可导出 YAML）
+### 3.5 装甲板在线调参（可导出 YAML）
 
 ```bash
 ./diagnostics/auto_aim/diagnose.sh armor-tune configs/standard3.yaml
@@ -64,7 +76,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 - `R` 导出新配置（文件名带时间戳）
 - `L` 开关日志（`logs/auto_aim_ui_*.jsonl`）
 
-### 3.5 装甲板离线回放
+### 3.6 装甲板离线回放
 
 ```bash
 ./diagnostics/auto_aim/diagnose.sh armor-offline configs/demo.yaml assets/demo/demo --start-index=0 --end-index=0
@@ -72,21 +84,23 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 
 说明：`input-prefix` 传前缀，程序读取 `<prefix>.avi` 和 `<prefix>.txt`。
 
-### 3.6 Power Rune 识别 + 画框（离线）
+### 3.7 Power Rune 识别 + 画框（离线）
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+./diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0
 ```
 
 说明：
 
 - `rune-rec` 是 `rune-box` 的别名。
+- `input-prefix` 同样传前缀，程序读取 `<prefix>.avi` 和 `<prefix>.txt`。
 - 程序会在窗口显示打符目标框、重投影结果和调试曲线。
+- 仓库当前未附带 `power_rune_demo` 示例数据，需要自行准备离线回放素材。
 
-### 3.7 Power Rune 调参（脚本交互）
+### 3.8 Power Rune 调参（脚本交互）
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+./diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml path/to/power_rune_demo --start-index=0 --end-index=0
 ```
 
 调参命令：
@@ -101,7 +115,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 
 说明：`rune-tune` 会直接写回当前 `config.yaml`。
 
-### 3.8 Power Rune 在线调试（可选）
+### 3.9 Power Rune 在线调试（可选）
 
 ```bash
 ./diagnostics/auto_aim/diagnose.sh rune-online configs/standard3.yaml
