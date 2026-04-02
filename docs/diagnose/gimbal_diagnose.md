@@ -1,6 +1,6 @@
 # Gimbal Diagnose 脚本说明
 
-本文档说明 `diagnostics/gimbal/diagnose.sh` 的使用方法和判读规则，用于云台串口链路联调。
+本文档说明 `diagnostics/gimbal/diagnose.sh` 与 `diagnostics/gimbal/diagnose_ros2.sh` 的使用方法和判读规则，用于云台串口链路和 ROS2 topic 链路联调。
 
 ## 1. 基本用法
 
@@ -10,6 +10,15 @@
 
 - 默认配置文件：`configs/standard3.yaml`
 - `extra args` 会透传给底层测试程序（例如 `--ports=...`、`--duration-ms=...`）。
+
+ROS2 topic 诊断脚本：
+
+```bash
+./diagnostics/gimbal/diagnose_ros2.sh <action> [config.yaml] [extra args...]
+```
+
+- 需要先 source ROS2 环境，且本机能访问目标 graph。
+- 默认读取 `gimbal_to_vision_topic` 与 `vision_to_gimbal_topic` 配置键。
 
 ## 2. Action 对照
 
@@ -52,3 +61,7 @@
 
 - 非英雄协议默认为：`0xA5` 下发，`0x5A` 回传（49B 回传帧）。
 - 应用侧与串口协议侧统一约定为“pitch 抬头为正”。
+- ROS2 topic 联调可用：
+  - `./diagnostics/gimbal/diagnose_ros2.sh check`
+  - `./diagnostics/gimbal/diagnose_ros2.sh echo-rx`
+  - `./diagnostics/gimbal/diagnose_ros2.sh pub-stop`

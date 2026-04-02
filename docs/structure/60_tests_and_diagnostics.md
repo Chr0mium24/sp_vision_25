@@ -29,6 +29,7 @@
 | `diagnostics/gimbal/gimbal_link_diag_test.cpp` | 协议级链路诊断，验证收发与 CRC。 |
 | `diagnostics/gimbal/gimbal_ros2_bridge.cpp` | ROS2 环境下的串口-话题桥接程序，桥接 `/gimbal_to_vision` 和 `/visionToGimbal`。 |
 | `diagnostics/gimbal/diagnose.sh` | 云台诊断脚本，统一封装 quick/probe/axis/manual-axis/watch/control 等动作。 |
+| `diagnostics/gimbal/diagnose_ros2.sh` | 云台 ROS2 topic 诊断脚本，检查 topic 存在性、频率、单次接收和样例 `0xA5` 发包。 |
 
 ## 60.5 `tests/auto_aim/`
 
