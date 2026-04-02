@@ -77,6 +77,10 @@ t_camera2gimbal: [0.13160669975045827, 0.10377721766577375, 0.024908271912914642
 quaternion_canid: 0x100
 bullet_speed_canid: 0x101
 send_canid: 0xff
+send_yaw_scale: -1
+send_yaw_bias_deg: 180
+send_pitch_scale: 1
+send_pitch_bias_deg: 0
 can_interface: "can0"
 
 #####-----gimbal参数-----#####

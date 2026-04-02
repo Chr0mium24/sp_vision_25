@@ -108,6 +108,14 @@ public:
   void send(io::VisionToGimbal VisionToGimbal);
 
 private:
+  struct SendTransform
+  {
+    float yaw_scale = 1.0f;
+    float yaw_bias_rad = 0.0f;
+    float pitch_scale = 1.0f;
+    float pitch_bias_rad = 0.0f;
+  };
+
   serial::Serial serial_;
 
   std::thread thread_;
@@ -116,6 +124,7 @@ private:
 
   GimbalToVision rx_data_{};
   VisionToGimbal tx_data_{};
+  SendTransform send_transform_{};
 
   GimbalMode mode_ = GimbalMode::IDLE;
   GimbalState state_;
@@ -123,6 +132,7 @@ private:
   tools::ThreadSafeQueue<std::tuple<Eigen::Quaterniond, std::chrono::steady_clock::time_point>>
     queue_{1000};
 
+  void apply_send_transform(float & yaw, float & pitch) const;
   bool read(uint8_t * buffer, size_t size);
   void read_thread();
   void reconnect();

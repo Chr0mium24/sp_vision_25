@@ -55,10 +55,19 @@ private:
     std::chrono::steady_clock::time_point timestamp;
   };
 
+  struct SendTransform
+  {
+    double yaw_scale = 1.0;
+    double yaw_bias_rad = 0.0;
+    double pitch_scale = 1.0;
+    double pitch_bias_rad = 0.0;
+  };
+
   tools::ThreadSafeQueue<IMUData> queue_;  // 必须在can_之前初始化，否则存在死锁的可能
   SocketCAN can_;
   IMUData data_ahead_;
   IMUData data_behind_;
+  SendTransform send_transform_;
 
   int quaternion_canid_, bullet_speed_canid_, send_canid_;
 

@@ -36,6 +36,12 @@ Gimbal::Gimbal(const std::string & config_path, bool wait_for_first_q)
 {
   auto yaml = tools::load(config_path);
   auto com_port = tools::read<std::string>(yaml, "com_port");
+  if (yaml["send_yaw_scale"]) send_transform_.yaw_scale = yaml["send_yaw_scale"].as<float>();
+  if (yaml["send_yaw_bias_deg"]) send_transform_.yaw_bias_rad = yaml["send_yaw_bias_deg"].as<float>() / 57.3f;
+  if (yaml["send_pitch_scale"]) send_transform_.pitch_scale = yaml["send_pitch_scale"].as<float>();
+  if (yaml["send_pitch_bias_deg"]) {
+    send_transform_.pitch_bias_rad = yaml["send_pitch_bias_deg"].as<float>() / 57.3f;
+  }
 
   try {
     serial_.setPort(com_port);
@@ -121,11 +127,18 @@ Eigen::Quaterniond Gimbal::q(std::chrono::steady_clock::time_point t)
   }
 }
 
+void Gimbal::apply_send_transform(float & yaw, float & pitch) const
+{
+  yaw = yaw * send_transform_.yaw_scale + send_transform_.yaw_bias_rad;
+  pitch = pitch * send_transform_.pitch_scale + send_transform_.pitch_bias_rad;
+}
+
 void Gimbal::send(io::VisionToGimbal VisionToGimbal)
 {
   tx_data_.tracking = VisionToGimbal.tracking;
   tx_data_.pitch = VisionToGimbal.pitch;
   tx_data_.yaw = VisionToGimbal.yaw;
+  apply_send_transform(tx_data_.yaw, tx_data_.pitch);
   tx_data_.fire = VisionToGimbal.fire;
   tx_data_.fric_on = VisionToGimbal.fric_on;
   tx_data_.checksum = tools::get_crc16(
@@ -148,6 +161,7 @@ void Gimbal::send(
   bool control, bool fire, float yaw, float yaw_vel, float yaw_acc, float pitch, float pitch_vel,
   float pitch_acc)
 {
+  apply_send_transform(yaw, pitch);
   tx_data_.tracking = control;
   tx_data_.yaw = yaw;
   tx_data_.pitch = pitch;

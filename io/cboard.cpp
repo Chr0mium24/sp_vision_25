@@ -46,6 +46,9 @@ Eigen::Quaterniond CBoard::imu_at(std::chrono::steady_clock::time_point timestam
 
 void CBoard::send(Command command) const
 {
+  command.yaw = command.yaw * send_transform_.yaw_scale + send_transform_.yaw_bias_rad;
+  command.pitch = command.pitch * send_transform_.pitch_scale + send_transform_.pitch_bias_rad;
+
   can_frame frame;
   frame.can_id = send_canid_;
   frame.can_dlc = 8;
@@ -110,6 +113,12 @@ std::string CBoard::read_yaml(const std::string & config_path)
   quaternion_canid_ = tools::read<int>(yaml, "quaternion_canid");
   bullet_speed_canid_ = tools::read<int>(yaml, "bullet_speed_canid");
   send_canid_ = tools::read<int>(yaml, "send_canid");
+  if (yaml["send_yaw_scale"]) send_transform_.yaw_scale = yaml["send_yaw_scale"].as<double>();
+  if (yaml["send_yaw_bias_deg"]) send_transform_.yaw_bias_rad = yaml["send_yaw_bias_deg"].as<double>() / 57.3;
+  if (yaml["send_pitch_scale"]) send_transform_.pitch_scale = yaml["send_pitch_scale"].as<double>();
+  if (yaml["send_pitch_bias_deg"]) {
+    send_transform_.pitch_bias_rad = yaml["send_pitch_bias_deg"].as<double>() / 57.3;
+  }
 
   if (!yaml["can_interface"]) {
     throw std::runtime_error("Missing 'can_interface' in YAML configuration.");
