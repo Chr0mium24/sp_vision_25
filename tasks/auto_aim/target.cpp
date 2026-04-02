@@ -74,6 +74,11 @@ void Target::predict(std::chrono::steady_clock::time_point t)
 
 void Target::predict(double dt)
 {
+  debug_.last_predict = TargetPredictDebug{};
+  debug_.last_predict.valid = true;
+  debug_.last_predict.dt = dt;
+  debug_.last_predict.x_before = ekf_.x;
+
   // 状态转移矩阵
   // clang-format off
   Eigen::MatrixXd F{
@@ -120,6 +125,8 @@ void Target::predict(double dt)
     {     0,      0,      0,      0,      0,      0,      0,      0, 0, 0, 0}
   };
   // clang-format on
+  debug_.last_predict.F = F;
+  debug_.last_predict.Q = Q;
 
   // 防止夹角求和出现异常值
   auto f = [&](const Eigen::VectorXd & x) -> Eigen::VectorXd {
@@ -129,18 +136,27 @@ void Target::predict(double dt)
   };
 
   // 前哨站转速特判
-  if (this->convergened() && this->name == ArmorName::outpost && std::abs(this->ekf_.x[7]) > 2)
+  if (this->convergened() && this->name == ArmorName::outpost && std::abs(this->ekf_.x[7]) > 2) {
     this->ekf_.x[7] = this->ekf_.x[7] > 0 ? 2.51 : -2.51;
+    debug_.last_predict.outpost_speed_clamped = true;
+  }
 
   ekf_.predict(F, Q, f);
+  debug_.last_predict.x_after = ekf_.x;
 }
 
 void Target::update(const Armor & armor)
 {
+  debug_.last_update = TargetUpdateDebug{};
+  debug_.last_update.valid = true;
+  debug_.last_update.x_before = ekf_.x;
+
   // 装甲板匹配
   int id;
   auto min_angle_error = 1e10;
   const std::vector<Eigen::Vector4d> & xyza_list = armor_xyza_list();
+  debug_.last_update.candidate_xyza_list = xyza_list;
+  debug_.last_update.candidate_count = static_cast<int>(xyza_list.size());
 
   std::vector<std::pair<Eigen::Vector4d, int>> xyza_i_list;
   for (int i = 0; i < armor_num_; i++) {
@@ -156,7 +172,8 @@ void Target::update(const Armor & armor)
     });
 
   // 取前3个distance最小的装甲板
-  for (int i = 0; i < 3; i++) {
+  int top_k = std::min<int>(3, xyza_i_list.size());
+  for (int i = 0; i < top_k; i++) {
     const auto & xyza = xyza_i_list[i].first;
     Eigen::Vector3d ypd = tools::xyz2ypd(xyza.head(3));
     auto angle_error = std::abs(tools::limit_rad(armor.ypr_in_world[0] - xyza[3])) +
@@ -180,6 +197,12 @@ void Target::update(const Armor & armor)
 
   last_id = id;
   update_count_++;
+  debug_.last_update.matched_id = id;
+  debug_.last_update.last_id = last_id;
+  debug_.last_update.switch_count = switch_count_;
+  debug_.last_update.update_count = update_count_;
+  debug_.last_update.jumped = jumped;
+  debug_.last_update.is_switch = is_switch_;
 
   update_ypda(armor, id);
 }
@@ -191,6 +214,8 @@ void Target::update_ypda(const Armor & armor, int id)
   // Eigen::VectorXd R_dig{{4e-3, 4e-3, 1, 9e-2}};
   auto center_yaw = std::atan2(armor.xyz_in_world[1], armor.xyz_in_world[0]);
   auto delta_angle = tools::limit_rad(armor.ypr_in_world[0] - center_yaw);
+  debug_.last_update.center_yaw = center_yaw;
+  debug_.last_update.delta_angle = delta_angle;
   Eigen::VectorXd R_dig{
     {4e-3, 4e-3, log(std::abs(delta_angle) + 1) + 1,
      log(std::abs(armor.ypd_in_world[2]) + 1) / 200 + 9e-2}};
@@ -218,13 +243,19 @@ void Target::update_ypda(const Armor & armor, int id)
   const Eigen::VectorXd & ypd = armor.ypd_in_world;
   const Eigen::VectorXd & ypr = armor.ypr_in_world;
   Eigen::VectorXd z{{ypd[0], ypd[1], ypd[2], ypr[0]}};  //获得观测量
+  debug_.last_update.z = z;
+  debug_.last_update.H = H;
+  debug_.last_update.R = R;
 
   ekf_.update(z, H, R, h, z_subtract);
+  debug_.last_update.x_after = ekf_.x;
 }
 
 Eigen::VectorXd Target::ekf_x() const { return ekf_.x; }
 
 const tools::ExtendedKalmanFilter & Target::ekf() const { return ekf_; }
+
+const TargetDebug & Target::debug() const { return debug_; }
 
 std::vector<Eigen::Vector4d> Target::armor_xyza_list() const
 {

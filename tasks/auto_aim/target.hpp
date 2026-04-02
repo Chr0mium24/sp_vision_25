@@ -13,6 +13,42 @@
 
 namespace auto_aim
 {
+struct TargetPredictDebug
+{
+  bool valid = false;
+  double dt = 0.0;
+  bool outpost_speed_clamped = false;
+  Eigen::VectorXd x_before;
+  Eigen::VectorXd x_after;
+  Eigen::MatrixXd F;
+  Eigen::MatrixXd Q;
+};
+
+struct TargetUpdateDebug
+{
+  bool valid = false;
+  int matched_id = -1;
+  int last_id = -1;
+  int switch_count = 0;
+  int update_count = 0;
+  bool jumped = false;
+  bool is_switch = false;
+  int candidate_count = 0;
+  double center_yaw = 0.0;
+  double delta_angle = 0.0;
+  Eigen::VectorXd x_before;
+  Eigen::VectorXd x_after;
+  Eigen::VectorXd z;
+  Eigen::MatrixXd H;
+  Eigen::MatrixXd R;
+  std::vector<Eigen::Vector4d> candidate_xyza_list;
+};
+
+struct TargetDebug
+{
+  TargetPredictDebug last_predict;
+  TargetUpdateDebug last_update;
+};
 
 class Target
 {
@@ -36,6 +72,7 @@ public:
   Eigen::VectorXd ekf_x() const;
   const tools::ExtendedKalmanFilter & ekf() const;
   std::vector<Eigen::Vector4d> armor_xyza_list() const;
+  const TargetDebug & debug() const;
 
   bool diverged() const;
 
@@ -54,6 +91,7 @@ private:
 
   tools::ExtendedKalmanFilter ekf_;
   std::chrono::steady_clock::time_point t_;
+  TargetDebug debug_;
 
   void update_ypda(const Armor & armor, int id);  // yaw pitch distance angle
 

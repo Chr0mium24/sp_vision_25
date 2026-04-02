@@ -9,6 +9,36 @@
 
 namespace auto_aim
 {
+struct SolverYawSearchSample
+{
+  double yaw = 0.0;
+  double error = 0.0;
+  double inclined = 0.0;
+};
+
+struct SolverDebug
+{
+  bool valid = false;
+  Color color = blue;
+  ArmorType type = small;
+  ArmorName name = not_armor;
+  std::vector<cv::Point2f> image_points;
+  Eigen::Vector3d xyz_in_camera = Eigen::Vector3d::Zero();
+  Eigen::Vector3d xyz_in_gimbal = Eigen::Vector3d::Zero();
+  Eigen::Vector3d xyz_in_world = Eigen::Vector3d::Zero();
+  Eigen::Vector3d ypr_in_gimbal = Eigen::Vector3d::Zero();
+  Eigen::Vector3d ypr_in_world_before_opt = Eigen::Vector3d::Zero();
+  Eigen::Vector3d ypr_in_world_after_opt = Eigen::Vector3d::Zero();
+  Eigen::Vector3d ypd_in_world = Eigen::Vector3d::Zero();
+  bool is_balance = false;
+  bool yaw_optimized = false;
+  double yaw_raw = 0.0;
+  double best_yaw = 0.0;
+  double min_error = 0.0;
+  double search_start_yaw = 0.0;
+  std::vector<SolverYawSearchSample> yaw_search;
+};
+
 class Solver
 {
 public:
@@ -19,6 +49,8 @@ public:
   void set_R_gimbal2world(const Eigen::Quaterniond & q);
 
   void solve(Armor & armor) const;
+
+  const SolverDebug & debug() const;
 
   std::vector<cv::Point2f> reproject_armor(
     const Eigen::Vector3d & xyz_in_world, double yaw, ArmorType type, ArmorName name) const;
@@ -34,6 +66,7 @@ private:
   Eigen::Matrix3d R_camera2gimbal_;
   Eigen::Vector3d t_camera2gimbal_;
   Eigen::Matrix3d R_gimbal2world_;
+  mutable SolverDebug debug_;
 
   void optimize_yaw(Armor & armor) const;
 

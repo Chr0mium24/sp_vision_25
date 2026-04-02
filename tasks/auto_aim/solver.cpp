@@ -45,6 +45,8 @@ Solver::Solver(const std::string & config_path) : R_gimbal2world_(Eigen::Matrix3
 
 Eigen::Matrix3d Solver::R_gimbal2world() const { return R_gimbal2world_; }
 
+const SolverDebug & Solver::debug() const { return debug_; }
+
 void Solver::set_R_gimbal2world(const Eigen::Quaterniond & q)
 {
   Eigen::Matrix3d R_imubody2imuabs = q.toRotationMatrix();
@@ -54,6 +56,13 @@ void Solver::set_R_gimbal2world(const Eigen::Quaterniond & q)
 //solvePnP（获得姿态）
 void Solver::solve(Armor & armor) const
 {
+  debug_ = SolverDebug{};
+  debug_.valid = true;
+  debug_.color = armor.color;
+  debug_.type = armor.type;
+  debug_.name = armor.name;
+  debug_.image_points = armor.points;
+
   const auto & object_points =
     (armor.type == ArmorType::big) ? BIG_ARMOR_POINTS : SMALL_ARMOR_POINTS;
 
@@ -64,8 +73,11 @@ void Solver::solve(Armor & armor) const
 
   Eigen::Vector3d xyz_in_camera;
   cv::cv2eigen(tvec, xyz_in_camera);
+  debug_.xyz_in_camera = xyz_in_camera;
   armor.xyz_in_gimbal = R_camera2gimbal_ * xyz_in_camera + t_camera2gimbal_;
   armor.xyz_in_world = R_gimbal2world_ * armor.xyz_in_gimbal;
+  debug_.xyz_in_gimbal = armor.xyz_in_gimbal;
+  debug_.xyz_in_world = armor.xyz_in_world;
 
   cv::Mat rmat;
   cv::Rodrigues(rvec, rmat);
@@ -75,16 +87,26 @@ void Solver::solve(Armor & armor) const
   Eigen::Matrix3d R_armor2world = R_gimbal2world_ * R_armor2gimbal;
   armor.ypr_in_gimbal = tools::eulers(R_armor2gimbal, 2, 1, 0);
   armor.ypr_in_world = tools::eulers(R_armor2world, 2, 1, 0);
+  debug_.ypr_in_gimbal = armor.ypr_in_gimbal;
+  debug_.ypr_in_world_before_opt = armor.ypr_in_world;
 
   armor.ypd_in_world = tools::xyz2ypd(armor.xyz_in_world);
+  debug_.ypd_in_world = armor.ypd_in_world;
 
   // 平衡不做yaw优化，因为pitch假设不成立
   auto is_balance = (armor.type == ArmorType::big) &&
                     (armor.name == ArmorName::three || armor.name == ArmorName::four ||
                      armor.name == ArmorName::five);
-  if (is_balance) return;
+  debug_.is_balance = is_balance;
+  if (is_balance) {
+    debug_.ypr_in_world_after_opt = armor.ypr_in_world;
+    debug_.yaw_raw = armor.ypr_in_world[0];
+    debug_.best_yaw = armor.ypr_in_world[0];
+    return;
+  }
 
   optimize_yaw(armor);
+  debug_.ypr_in_world_after_opt = armor.ypr_in_world;
 }
 
 std::vector<cv::Point2f> Solver::reproject_armor(
@@ -199,6 +221,10 @@ void Solver::optimize_yaw(Armor & armor) const
 
   constexpr double SEARCH_RANGE = 140;  // degree
   auto yaw0 = tools::limit_rad(gimbal_ypr[0] - SEARCH_RANGE / 2 * CV_PI / 180.0);
+  debug_.yaw_search.clear();
+  debug_.yaw_search.reserve(SEARCH_RANGE);
+  debug_.search_start_yaw = yaw0;
+  debug_.yaw_optimized = true;
 
   auto min_error = 1e10;
   auto best_yaw = armor.ypr_in_world[0];
@@ -206,6 +232,8 @@ void Solver::optimize_yaw(Armor & armor) const
   for (int i = 0; i < SEARCH_RANGE; i++) {
     double yaw = tools::limit_rad(yaw0 + i * CV_PI / 180.0);
     auto error = armor_reprojection_error(armor, yaw, (i - SEARCH_RANGE / 2) * CV_PI / 180.0);
+    debug_.yaw_search.push_back(
+      SolverYawSearchSample{yaw, error, (i - SEARCH_RANGE / 2) * CV_PI / 180.0});
 
     if (error < min_error) {
       min_error = error;
@@ -215,6 +243,9 @@ void Solver::optimize_yaw(Armor & armor) const
 
   armor.yaw_raw = armor.ypr_in_world[0];
   armor.ypr_in_world[0] = best_yaw;
+  debug_.yaw_raw = armor.yaw_raw;
+  debug_.best_yaw = best_yaw;
+  debug_.min_error = min_error;
 }
 
 double Solver::SJTU_cost(

@@ -28,19 +28,29 @@ Tracker::Tracker(const std::string & config_path, Solver & solver)
 
 std::string Tracker::state() const { return state_; }
 
+const TrackerDebug & Tracker::debug() const { return debug_; }
+
 std::list<Target> Tracker::track(
   std::list<Armor> & armors, std::chrono::steady_clock::time_point t, bool use_enemy_color)
 {
+  debug_ = TrackerDebug{};
+  debug_.valid = true;
   auto dt = tools::delta_time(t, last_timestamp_);
+  debug_.dt = dt;
   last_timestamp_ = t;
+  debug_.prev_state = state_;
+  debug_.armors_before_filter = static_cast<int>(armors.size());
 
   // 时间间隔过长，说明可能发生了相机离线
   if (state_ != "lost" && dt > 0.1) {
     tools::logger()->warn("[Tracker] Large dt: {:.3f}s", dt);
     state_ = "lost";
+    debug_.reset_due_to_large_dt = true;
   }
   // 过滤掉非我方装甲板
   armors.remove_if([&](const auto_aim::Armor & a) { return a.color != enemy_color_; });
+  debug_.armors_after_filter = static_cast<int>(armors.size());
+  debug_.filtered_by_color = debug_.armors_before_filter - debug_.armors_after_filter;
 
   // 过滤前哨站顶部装甲板
   // armors.remove_if([this](const auto_aim::Armor & a) {
@@ -60,22 +70,38 @@ std::list<Target> Tracker::track(
   // 按优先级排序，优先级最高在首位(优先级越高数字越小，1的优先级最高)
   armors.sort(
     [](const auto_aim::Armor & a, const auto_aim::Armor & b) { return a.priority < b.priority; });
+  int armor_index = 0;
+  for (const auto & armor : armors) {
+    debug_.candidates.push_back(
+      TrackerArmorDebug{
+        armor_index++, armor.color, armor.type, armor.name, armor.priority, armor.center,
+        static_cast<float>(armor.confidence)});
+  }
 
   bool found;
   if (state_ == "lost") {
+    debug_.operation = "set_target";
     found = set_target(armors, t);
   }
 
   else {
+    debug_.operation = "update_target";
     found = update_target(armors, t);
   }
+  debug_.found = found;
 
   state_machine(found);
+  debug_.detect_count = detect_count_;
+  debug_.temp_lost_count = temp_lost_count_;
+  debug_.max_temp_lost_count = max_temp_lost_count_;
+  debug_.next_state = state_;
 
   // 发散检测
   if (state_ != "lost" && target_.diverged()) {
     tools::logger()->debug("[Tracker] Target diverged!");
     state_ = "lost";
+    debug_.diverged = true;
+    debug_.next_state = state_;
     return {};
   }
 
@@ -86,10 +112,14 @@ std::list<Target> Tracker::track(
     (0.4 * target_.ekf().window_size)) {
     tools::logger()->debug("[Target] Bad Converge Found!");
     state_ = "lost";
+    debug_.bad_converge = true;
+    debug_.next_state = state_;
     return {};
   }
 
   if (state_ == "lost") return {};
+  debug_.target_ekf_x = target_.ekf_x();
+  debug_.target_debug = target_.debug();
 
   std::list<Target> targets = {target_};
   return targets;
@@ -234,6 +264,7 @@ bool Tracker::set_target(std::list<Armor> & armors, std::chrono::steady_clock::t
 
   auto & armor = armors.front();
   solver_.solve(armor);
+  debug_.matched_count = 1;
 
   // 根据兵种优化初始化参数
   auto is_balance = (armor.type == ArmorType::big) &&
@@ -260,12 +291,15 @@ bool Tracker::set_target(std::list<Armor> & armors, std::chrono::steady_clock::t
     target_ = Target(armor, t, 0.2, 4, P0_dig);
   }
 
+  debug_.target_ekf_x = target_.ekf_x();
+  debug_.target_debug = target_.debug();
   return true;
 }
 
 bool Tracker::update_target(std::list<Armor> & armors, std::chrono::steady_clock::time_point t)
 {
   target_.predict(t);
+  debug_.target_debug = target_.debug();
 
   int found_count = 0;
   double min_x = 1e10;  // 画面最左侧
@@ -276,6 +310,7 @@ bool Tracker::update_target(std::list<Armor> & armors, std::chrono::steady_clock
   }
 
   if (found_count == 0) return false;
+  debug_.matched_count = found_count;
 
   for (auto & armor : armors) {
     if (
@@ -287,8 +322,10 @@ bool Tracker::update_target(std::list<Armor> & armors, std::chrono::steady_clock
     solver_.solve(armor);
 
     target_.update(armor);
+    debug_.target_debug = target_.debug();
   }
 
+  debug_.target_ekf_x = target_.ekf_x();
   return true;
 }
 

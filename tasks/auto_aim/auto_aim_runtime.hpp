@@ -35,6 +35,23 @@ struct RuntimeOutput
   std::string tracker_state;
 };
 
+struct RuntimeDebug
+{
+  bool valid = false;
+  int frame_index = -1;
+  double bullet_speed = 0.0;
+  bool use_enemy_color = true;
+  bool to_now = true;
+  Eigen::Quaterniond q_gimbal2world = Eigen::Quaterniond::Identity();
+  Eigen::Matrix3d R_gimbal2world = Eigen::Matrix3d::Identity();
+  std::list<Armor> detected_armors;
+  SolverDebug solver;
+  TrackerDebug tracker;
+  AimerDebug aimer;
+  io::Command command{false, false, 0, 0};
+  std::string tracker_state;
+};
+
 class Runtime
 {
 public:
@@ -46,12 +63,14 @@ public:
   Tracker & tracker();
   Aimer & aimer();
   YOLO & yolo();
+  const RuntimeDebug & debug() const;
 
 private:
   YOLO yolo_;
   Solver solver_;
   Tracker tracker_;
   Aimer aimer_;
+  RuntimeDebug debug_;
 };
 
 }  // namespace auto_aim

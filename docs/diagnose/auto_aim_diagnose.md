@@ -43,6 +43,8 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 - 调用 `auto_aim_ui_test --show=true`
 - 图像窗口里会显示目标框和重投影框
 - TUI 同时显示 `targets/state/cmd` 等关键状态
+- 按 `S` 可将当前帧完整快照保存到 `logs/auto_aim_snapshots/<timestamp>_<index>/`
+- 快照目录包含 `raw.png`、`annotated.png`、`frame.json`，其中 `frame.json` 会展开 `solver -> tracker/target -> aimer -> final command` 的中间数据流
 
 ### 3.3 装甲板在线识别（无 GUI）
 
