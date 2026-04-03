@@ -1,4 +1,4 @@
-enemy_color: "blue"
+enemy_color: "red"
 
 #####-----神经网络参数-----#####
 yolo_name: yolov5
@@ -37,7 +37,7 @@ outpost_max_temp_lost_count: 75
 
 #####-----aimer参数-----#####
 yaw_offset: 2 # degree -2.5
-pitch_offset: 13 # degree 2
+pitch_offset: 2 # degree 2
 comming_angle: 55 # degree
 leaving_angle: 20 # degree
 decision_speed: 7 # rad/s
@@ -51,7 +51,7 @@ judge_distance: 2 #距离判断阈值
 auto_fire: true # 是否由自瞄控制射击
 
 camera_name: "hikrobot"
-exposure_ms: 2.000000
+exposure_ms: 1.500000
 gain: 16.9
 vid_pid: "2bdf:0001"
 
