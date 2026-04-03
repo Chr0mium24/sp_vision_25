@@ -244,18 +244,17 @@ int main(int argc, char * argv[])
 
     if (yaw_delta_to_send != 0.0f) {
       ui.yaw_accum += yaw_delta_to_send;
-
-      io::VisionToGimbal plan{};
-      plan.tracking = ui.tracking ? 1 : 0;
-      plan.yaw = yaw_delta_to_send; // 增量发送
-      plan.pitch = static_cast<float>(ui.pitch_state);
-      plan.fire = ui.fire_mode;
-      plan.fric_on = ui.fric_on ? 1 : 0;
-      gimbal.send(plan);
-
       sent_this_loop = true;
       last_sent_yaw_delta = yaw_delta_to_send;
     }
+
+    io::VisionToGimbal plan{};
+    plan.tracking = ui.tracking ? 1 : 0;
+    plan.yaw = yaw_delta_to_send; // 无增量时持续发送 0
+    plan.pitch = static_cast<float>(ui.pitch_state);
+    plan.fire = ui.fire_mode;
+    plan.fric_on = ui.fric_on ? 1 : 0;
+    gimbal.send(plan);
 
     print_tui(ui, gs, rx, dt_s, sent_this_loop, last_sent_yaw_delta);
     std::this_thread::sleep_for(std::chrono::milliseconds(loop_ms));
