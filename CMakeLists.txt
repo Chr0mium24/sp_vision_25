@@ -116,6 +116,9 @@ target_link_libraries(auto_aim_ui_tune ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io
 add_executable(gimbal_ui_test diagnostics/gimbal/gimbal_ui_test.cpp)
 target_link_libraries(gimbal_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 
+add_executable(gimbal_yaw_delta_diag_test diagnostics/gimbal/gimbal_yaw_delta_diag_test.cpp)
+target_link_libraries(gimbal_yaw_delta_diag_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
+
 add_executable(gimbal_axis_diag_test diagnostics/gimbal/gimbal_axis_diag_test.cpp)
 target_link_libraries(gimbal_axis_diag_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 
@@ -170,6 +173,7 @@ set_diag_output(auto_aim_ui_tune auto_aim)
 set_diag_output(auto_buff_debug auto_buff)
 set_diag_output(auto_buff_debug_mpc auto_buff)
 set_diag_output(gimbal_ui_test gimbal)
+set_diag_output(gimbal_yaw_delta_diag_test gimbal)
 set_diag_output(gimbal_axis_diag_test gimbal)
 set_diag_output(gimbal_manual_axis_diag_test gimbal)
 set_diag_output(gimbal_serial_probe gimbal)
