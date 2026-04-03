@@ -47,9 +47,13 @@ int main(int argc, char * argv[])
     auto output = runtime.step({img, t, q, 21.0});
     auto command = output.command;
 
-    gimbal.send(
-      command.control, command.shoot, static_cast<float>(command.yaw), 0, 0,
-      static_cast<float>(command.pitch), 0, 0);
+    io::VisionToGimbal plan{};
+    plan.tracking = command.control ? 1 : 0;
+    plan.yaw = static_cast<float>(command.yaw);
+    plan.pitch = static_cast<float>(command.pitch);
+    plan.fire = command.shoot ? 1 : 0;
+    plan.fric_on = 1;
+    gimbal.send(plan);
   }
 
   return 0;
