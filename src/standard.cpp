@@ -44,7 +44,7 @@ int main(int argc, char * argv[])
       last_mode = mode;
     }
 
-    auto output = runtime.step({img, t, q, 25.0});
+    auto output = runtime.step({img, t, q, 21.0});
     auto command = output.command;
 
     gimbal.send(
