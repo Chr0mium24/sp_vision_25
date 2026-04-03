@@ -1,4 +1,4 @@
-enemy_color: "blue"
+enemy_color: "red"
 
 #####-----神经网络参数-----#####
 yolo_name: yolov5
@@ -36,8 +36,8 @@ max_temp_lost_count: 15
 outpost_max_temp_lost_count: 75
 
 #####-----aimer参数-----#####
-yaw_offset: 2 # degree -2.5
-pitch_offset: 13 # degree 2
+yaw_offset: 0 # degree -2.5
+pitch_offset: 0 # degree 2
 comming_angle: 55 # degree
 leaving_angle: 20 # degree
 decision_speed: 7 # rad/s
@@ -58,7 +58,7 @@ vid_pid: "2bdf:0001"
 #  1  0  0
 #  0  1  0
 #  0  0  1
-R_gimbal2imubody: [0, -1, 0, 1, 0, 0, 0, 0, 1]
+R_gimbal2imubody: [1, 0, 0, 0, 1, 0, 0, 0, 1]
 
 
 # 重投影误差: 0.0642px
