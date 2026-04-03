@@ -1,13 +1,13 @@
 pattern_type: "chessboard"
-pattern_cols: 8
-pattern_rows: 6
-center_distance_mm: 20
+pattern_cols: 10
+pattern_rows: 7
+center_distance_mm: 15
 
 R_gimbal2imubody: [1, 0, 0, 0, 1, 0,  0, 0, 1]
 
 camera_name: "hikrobot"
-exposure_ms: 5
-gain: 20
+exposure_ms: 2.5
+gain: 16
 vid_pid: "2bdf:0001"
 
 #####-----cboard参数-----#####
@@ -18,7 +18,7 @@ can_interface: "can0"
 
 com_port: "/dev/ttyACM0"
 
-# 重投影误差: 0.0642px
-camera_matrix: [2297.9076211852957, 0, 708.90481163239599, 0, 2310.1870057431402, 473.73138749214627, 0, 0, 1]
-distort_coeffs: [-0.022724092108620295, -0.087129311724970973, 0.00059025240298761635, -0.0015723013201643706, 0]
+# 重投影误差: 0.7129px
+camera_matrix: [2371.1881667157977, 0, 695.6613328238127, 0, 2374.0123994715054, 561.72108269229579, 0, 0, 1]
+distort_coeffs: [-0.14552895874826391, 1.2829034997471067, 0.0054732781540788103, -0.0016520217706478837, 0]
 
