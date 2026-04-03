@@ -8,6 +8,7 @@ message(STATUS "--------------------CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}-------
 
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
+add_definitions(-DSPDLOG_FMT_EXTERNAL)
 find_package(Eigen3 REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(yaml-cpp REQUIRED)
