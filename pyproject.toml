@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sp-vision-25-python"
+version = "0.1.0"
+description = "Python workspace for scripts, tests, and future bindings in sp_vision_25."
+readme = "readme.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "rich>=15.0.0",
+    "ruamel-yaml>=0.19.1",
+    "textual>=8.2.4",
+    "typer>=0.24.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sp_vision_25_python"]
+
+[tool.pytest.ini_options]
+testpaths = ["python_tests"]

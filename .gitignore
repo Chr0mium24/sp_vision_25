@@ -1,6 +1,9 @@
 .vscode/
 .github/
 build/
+build_fresh/
+build_sys/
+build_uv/
 Camera/
 logs/
 assets/img_with_q/
@@ -14,6 +17,11 @@ testvideos/
 watchdog.sh
 records_24/
 records_25/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
 *.txt
 
 references/
+.codex

@@ -81,12 +81,25 @@ IMU型号：使用C板内置BMI088作为IMU\
     make -C build/ -j`nproc`
     ```
 
-3. 运行demo:
+3. 使用 uv 管理 Python 环境（可选）
+    本项目主体仍为 C++/CMake，但仓库已经补充了 `uv` 工作区，适合后续管理 Python 脚本、测试与 pybind11 绑定代码。
+    ```bash
+    uv sync
+    uv run pytest
+    ```
+    如需切换 Python 版本：
+    ```bash
+    uv python install 3.12
+    uv python pin 3.12
+    uv sync
+    ```
+
+4. 运行demo:
     ```bash
     ./build/bin/tests/auto_aim/auto_aim_test
     ```
 
-4. 注册自启：
+5. 注册自启：
     1. 确保已安装`screen`:
         ```
         sudo apt install screen
@@ -109,7 +122,7 @@ IMU型号：使用C板内置BMI088作为IMU\
         chmod +x autostart.sh
         ```
 
-5. USB2CAN设置（可选）
+6. USB2CAN设置（可选）
     1. 创建`.rules`文件:
         ```
         sudo touch /etc/udev/rules.d/99-can-up.rules
@@ -119,7 +132,7 @@ IMU型号：使用C板内置BMI088作为IMU\
         ACTION=="add", KERNEL=="can0", RUN+="/sbin/ip link set can0 up type can bitrate 1000000"
         ACTION=="add", KERNEL=="can1", RUN+="/sbin/ip link set can1 up type can bitrate 1000000"
 
-6. 使用GPU推理（可选）
+7. 使用GPU推理（可选）
     ```
     mkdir neo  
     cd neo  
@@ -138,7 +151,7 @@ IMU型号：使用C板内置BMI088作为IMU\
     ```
     注：如果使用 GPU 异步推理（async-infer），最高显示分辨率限制为 1920×1080 (24Hz)
 
-7. 串口设置
+8. 串口设置
     1. 授予权限
         ```
         sudo usermod -a -G dialout $USER

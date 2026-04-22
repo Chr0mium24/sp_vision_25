@@ -136,9 +136,11 @@ void Gimbal::apply_send_transform(float & yaw, float & pitch) const
 void Gimbal::send(io::VisionToGimbal VisionToGimbal)
 {
   tx_data_.tracking = VisionToGimbal.tracking;
-  tx_data_.pitch = VisionToGimbal.pitch;
-  tx_data_.yaw = VisionToGimbal.yaw;
-  apply_send_transform(tx_data_.yaw, tx_data_.pitch);
+  float yaw = VisionToGimbal.yaw;
+  float pitch = VisionToGimbal.pitch;
+  apply_send_transform(yaw, pitch);
+  tx_data_.yaw = yaw;
+  tx_data_.pitch = pitch;
   tx_data_.fire = VisionToGimbal.fire;
   tx_data_.fric_on = VisionToGimbal.fric_on;
   tx_data_.checksum = tools::get_crc16(
