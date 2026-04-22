@@ -111,3 +111,10 @@
 
 - 将 `diagnostics/camera/diagnose.sh`、`diagnostics/gimbal/diagnose.sh`、`diagnostics/auto_aim/diagnose.sh` 降级为 `uv run sp-vision-diagnose ...` 的薄包装
 - 旧脚本入口仍可用，但真正的业务逻辑已经统一到 Python diagnose 控制面
+
+### 16. Python diagnose 子应用整理
+
+- 将 `sp-vision-diagnose` 拆成 `camera`、`gimbal`、`auto-aim` 三个 Typer 子应用
+- 每个子应用按动作拆分为独立命令，减少了 `action` 分发的集中度
+- 保留了 `help` 子命令，便于和旧脚本调用习惯兼容
+- 这一步让后续接入 TUI/状态面板更容易继续演进
