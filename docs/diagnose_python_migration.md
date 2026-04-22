@@ -505,7 +505,7 @@ config/
 
 ### 8.1 配置基础设施
 
-#### [tools/yaml.hpp](/home/cr/Codes/sp_vision_25/tools/yaml.hpp)
+#### [tools/runtime/yaml.hpp](/home/cr/Codes/sp_vision_25/tools/runtime/yaml.hpp)
 
 当前问题：
 
@@ -607,9 +607,9 @@ config/
 #### [tasks/auto_aim/detector.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/detector.cpp)
 #### [tasks/auto_aim/classifier.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/classifier.cpp)
 #### [tasks/auto_aim/tracker.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/tracker.cpp)
-#### [tasks/auto_aim/yolos/yolov5.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/yolos/yolov5.cpp)
-#### [tasks/auto_aim/yolos/yolov8.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/yolos/yolov8.cpp)
-#### [tasks/auto_aim/yolos/yolo11.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/yolos/yolo11.cpp)
+#### [tasks/auto_aim/models/yolov5.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/models/yolov5.cpp)
+#### [tasks/auto_aim/models/yolov8.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/models/yolov8.cpp)
+#### [tasks/auto_aim/models/yolo11.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/models/yolo11.cpp)
 
 当前问题：
 
@@ -693,8 +693,8 @@ config/
 
 这部分虽然不是 diagnose 可执行文件，但对“Python diagnose/test 是否可信”至关重要。
 
-#### [tools/crc.hpp](/home/cr/Codes/sp_vision_25/tools/crc.hpp)
-#### [tools/crc.cpp](/home/cr/Codes/sp_vision_25/tools/crc.cpp)
+#### [tools/protocol/crc.hpp](/home/cr/Codes/sp_vision_25/tools/protocol/crc.hpp)
+#### [tools/protocol/crc.cpp](/home/cr/Codes/sp_vision_25/tools/protocol/crc.cpp)
 
 建议修改：
 
@@ -711,8 +711,8 @@ config/
 
 - Python 侧协议测试直接复用真实 C++ CRC 实现
 
-#### [tools/extended_kalman_filter.hpp](/home/cr/Codes/sp_vision_25/tools/extended_kalman_filter.hpp)
-#### [tools/extended_kalman_filter.cpp](/home/cr/Codes/sp_vision_25/tools/extended_kalman_filter.cpp)
+#### [tools/math/extended_kalman_filter.hpp](/home/cr/Codes/sp_vision_25/tools/math/extended_kalman_filter.hpp)
+#### [tools/math/extended_kalman_filter.cpp](/home/cr/Codes/sp_vision_25/tools/math/extended_kalman_filter.cpp)
 
 建议修改：
 
@@ -849,7 +849,7 @@ uv run sp-vision-diagnose gimbal "$@"
   - `tasks/auto_aim/planner`
   - `tasks/auto_aim/solver`
 - 新增 `config/` 层
-- 改造 `tools/yaml.hpp`
+- 改造 `tools/runtime/yaml.hpp`
 - 改造：
   - `io/camera.*`
   - `io/cboard.*`
@@ -938,7 +938,7 @@ Python 改 YAML
 2. 先把三个 `diagnose.sh` 迁成 Python 命令
 3. 接入 `pybind11` 构建链路
 4. 绑定 `tools/crc` 与 `tools/extended_kalman_filter`
-5. 改 `tools/yaml.hpp`，去掉 `exit(1)`
+5. 改 `tools/runtime/yaml.hpp`，去掉 `exit(1)`
 6. 为 `Planner` 新增 `PlannerConfig` 与 `update_runtime_config`
 7. 绑定 `Planner`
 8. 为 `AutoAimRuntime` 增加 `snapshot()` 接口

@@ -5,8 +5,8 @@
 #include <filesystem>
 #include <string>
 
-#include "math_tools.hpp"
-#include "tools/logger.hpp"
+#include "tools/math/math_tools.hpp"
+#include "tools/runtime/logger.hpp"
 
 namespace tools
 {

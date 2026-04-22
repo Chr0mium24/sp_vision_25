@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "armor.hpp"
-#include "tools/extended_kalman_filter.hpp"
+#include "tools/math/extended_kalman_filter.hpp"
 
 namespace auto_aim
 {

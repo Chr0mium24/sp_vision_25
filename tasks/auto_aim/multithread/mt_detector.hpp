@@ -6,9 +6,9 @@
 #include <openvino/openvino.hpp>
 #include <tuple>
 
-#include "tasks/auto_aim/yolos/yolov5.hpp"
-#include "tools/logger.hpp"
-#include "tools/thread_safe_queue.hpp"
+#include "tasks/auto_aim/models/yolov5.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/concurrency/thread_safe_queue.hpp"
 
 namespace auto_aim
 {

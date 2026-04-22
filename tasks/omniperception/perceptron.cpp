@@ -5,8 +5,8 @@
 #include <thread>
 
 #include "tasks/auto_aim/yolo.hpp"
-#include "tools/exiter.hpp"
-#include "tools/logger.hpp"
+#include "tools/runtime/exiter.hpp"
+#include "tools/runtime/logger.hpp"
 
 namespace omniperception
 {

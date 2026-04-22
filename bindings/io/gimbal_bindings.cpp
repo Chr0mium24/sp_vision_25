@@ -7,7 +7,7 @@
 #include <pybind11/stl.h>
 
 #include "io/gimbal/gimbal.hpp"
-#include "tools/math_tools.hpp"
+#include "tools/math/math_tools.hpp"
 
 namespace py = pybind11;
 

@@ -6,9 +6,9 @@
 #include "io/camera.hpp"
 #include "tasks/auto_aim/detector.hpp"
 #include "tasks/auto_aim/yolo.hpp"
-#include "tools/exiter.hpp"
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
+#include "tools/runtime/exiter.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
 
 const std::string keys =
   "{help h usage ? |                        | 输出命令行参数说明 }"

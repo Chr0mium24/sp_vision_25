@@ -2,7 +2,7 @@
 
 #include <libusb-1.0/libusb.h>
 
-#include "tools/logger.hpp"
+#include "tools/runtime/logger.hpp"
 
 using namespace std::chrono_literals;
 

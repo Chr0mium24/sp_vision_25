@@ -9,11 +9,11 @@
 
 #include "buff_detector.hpp"
 #include "buff_type.hpp"
-#include "tools/extended_kalman_filter.hpp"
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
-#include "tools/plotter.hpp"
-#include "tools/ransac_sine_fitter.hpp"
+#include "tools/math/extended_kalman_filter.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
+#include "tools/runtime/plotter.hpp"
+#include "tools/math/ransac_sine_fitter.hpp"
 
 namespace auto_buff
 {

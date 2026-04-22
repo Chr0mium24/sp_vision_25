@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
 
 add_library(tools OBJECT 
-    exiter.cpp
-    extended_kalman_filter.cpp
-    ransac_sine_fitter.cpp
-    img_tools.cpp
-    math_tools.cpp
-    plotter.cpp
-    trajectory.cpp
-    recorder.cpp
-    logger.cpp
-    pid.cpp
-    crc.cpp
+    runtime/exiter.cpp
+    math/extended_kalman_filter.cpp
+    math/ransac_sine_fitter.cpp
+    vision/img_tools.cpp
+    math/math_tools.cpp
+    runtime/plotter.cpp
+    math/trajectory.cpp
+    runtime/recorder.cpp
+    runtime/logger.cpp
+    math/pid.cpp
+    protocol/crc.cpp
 )

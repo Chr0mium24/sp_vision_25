@@ -1,6 +1,6 @@
 #include "commandgener.hpp"
 
-#include "tools/math_tools.hpp"
+#include "tools/math/math_tools.hpp"
 
 namespace auto_aim
 {

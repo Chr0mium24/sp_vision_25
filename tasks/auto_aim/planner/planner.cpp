@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "tools/math_tools.hpp"
-#include "tools/trajectory.hpp"
-#include "tools/yaml.hpp"
+#include "tools/math/math_tools.hpp"
+#include "tools/math/trajectory.hpp"
+#include "tools/runtime/yaml.hpp"
 
 using namespace std::chrono_literals;
 

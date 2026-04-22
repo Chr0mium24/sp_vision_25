@@ -5,8 +5,8 @@
 #include <filesystem>
 #include <opencv2/opencv.hpp>
 
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
 
 namespace omniperception
 {

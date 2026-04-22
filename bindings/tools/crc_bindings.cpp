@@ -3,7 +3,7 @@
 
 #include <pybind11/pybind11.h>
 
-#include "tools/crc.hpp"
+#include "tools/protocol/crc.hpp"
 
 namespace py = pybind11;
 

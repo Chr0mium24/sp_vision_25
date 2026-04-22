@@ -8,9 +8,9 @@
 #include <queue>
 #include <thread>
 
-#include "tools/crc.hpp"
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
+#include "tools/protocol/crc.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
 
 namespace io
 {

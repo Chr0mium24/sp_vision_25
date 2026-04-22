@@ -5,9 +5,9 @@
 #include <cmath>
 #include <vector>
 
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
-#include "tools/trajectory.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
+#include "tools/math/trajectory.hpp"
 
 namespace auto_aim
 {

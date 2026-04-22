@@ -2,9 +2,9 @@
 #include <thread>
 
 #include "io/dm_imu/dm_imu.hpp"
-#include "tools/exiter.hpp"
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
+#include "tools/runtime/exiter.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
 
 using namespace std::chrono_literals;
 

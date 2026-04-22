@@ -2,9 +2,9 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "yolos/yolo11.hpp"
-#include "yolos/yolov5.hpp"
-#include "yolos/yolov8.hpp"
+#include "models/yolo11.hpp"
+#include "models/yolov5.hpp"
+#include "models/yolov8.hpp"
 
 namespace auto_aim
 {

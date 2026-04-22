@@ -5,8 +5,8 @@
 
 #include <filesystem>
 
-#include "tools/img_tools.hpp"
-#include "tools/logger.hpp"
+#include "tools/vision/img_tools.hpp"
+#include "tools/runtime/logger.hpp"
 
 namespace auto_aim
 {

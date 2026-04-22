@@ -7,7 +7,7 @@
 
 #include "CameraApi.h"
 #include "io/camera.hpp"
-#include "tools/thread_safe_queue.hpp"
+#include "tools/concurrency/thread_safe_queue.hpp"
 
 namespace io
 {

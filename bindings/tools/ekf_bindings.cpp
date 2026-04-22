@@ -5,7 +5,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "tools/extended_kalman_filter.hpp"
+#include "tools/math/extended_kalman_filter.hpp"
 
 namespace py = pybind11;
 

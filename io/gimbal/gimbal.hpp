@@ -11,7 +11,7 @@
 #include <tuple>
 
 #include "serial/serial.h"
-#include "tools/thread_safe_queue.hpp"
+#include "tools/concurrency/thread_safe_queue.hpp"
 
 namespace io
 {

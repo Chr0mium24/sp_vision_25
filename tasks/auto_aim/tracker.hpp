@@ -10,7 +10,7 @@
 #include "solver.hpp"
 #include "target.hpp"
 #include "tasks/omniperception/perceptron.hpp"
-#include "tools/thread_safe_queue.hpp"
+#include "tools/concurrency/thread_safe_queue.hpp"
 
 namespace auto_aim
 {

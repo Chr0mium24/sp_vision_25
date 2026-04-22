@@ -14,22 +14,23 @@
 #include "tasks/auto_aim/solver.hpp"
 #include "tasks/auto_aim/tracker.hpp"
 #include "tasks/auto_aim/yolo.hpp"
-#include "tools/exiter.hpp"
-#include "tools/img_tools.hpp"
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
-#include "tools/plotter.hpp"
-#include "tools/recorder.hpp"
-#include "tools/thread_pool.hpp"
+#include "tools/runtime/exiter.hpp"
+#include "tools/vision/img_tools.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
+#include "tools/runtime/plotter.hpp"
+#include "tools/runtime/recorder.hpp"
+#include "tools/concurrency/thread_pool.hpp"
+#include "thread_test_support.hpp"
 
 const std::string keys =
   "{help h usage ? |                        | 输出命令行参数说明}"
   "{@config-path   | configs/ascento.yaml | 位置参数，yaml配置文件路径 }";
 
-tools::OrderedQueue frame_queue;
+camera_test_support::OrderedQueue frame_queue;
 
 // 处理detect任务的线程函数
-void detect_frame(tools::Frame && frame, auto_aim::YOLO & yolo)
+void detect_frame(camera_test_support::Frame && frame, auto_aim::YOLO & yolo)
 {
   frame.armors = yolo.detect(frame.img);
   frame_queue.enqueue(frame);
@@ -50,7 +51,7 @@ int main(int argc, char * argv[])
 
   // 处理线程函数
   auto process_thread = std::thread([&]() {
-    tools::Frame process_frame;
+    camera_test_support::Frame process_frame;
     while (!exiter.exit()) {
       process_frame = frame_queue.dequeue();
       auto img = process_frame.img;
@@ -68,8 +69,8 @@ int main(int argc, char * argv[])
 
   io::Camera camera(config_path);
   int num_yolo_thread = 8;
-  auto yolos = tools::create_yolov8s(config_path, num_yolo_thread, true);
-  // auto yolos = tools::create_yolo11s(config_path, num_yolo_thread, true);
+  auto yolos = camera_test_support::create_yolov8s(config_path, num_yolo_thread, true);
+  // auto yolos = camera_test_support::create_yolo11s(config_path, num_yolo_thread, true);
   std::vector<bool> yolo_used(num_yolo_thread, false);
   tools::ThreadPool thread_pool(num_yolo_thread);
 
@@ -106,7 +107,7 @@ int main(int argc, char * argv[])
         }
       }
       if (yolo) {
-        tools::Frame frame{frame_id, img.clone(), t};
+        camera_test_support::Frame frame{frame_id, img.clone(), t};
         detect_frame(std::move(frame), *yolo);
 
         yolo_used[yolo_id] = false;

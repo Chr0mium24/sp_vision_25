@@ -1,6 +1,8 @@
 #include "pid.hpp"
 
-#include "math_tools.hpp"
+#include <algorithm>
+
+#include "tools/math/math_tools.hpp"
 
 float clip(float value, float min, float max) { return std::max(min, std::min(max, value)); }
 

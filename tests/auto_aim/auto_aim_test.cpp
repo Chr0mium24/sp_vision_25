@@ -7,11 +7,11 @@
 #include <opencv2/opencv.hpp>
 
 #include "tasks/auto_aim/auto_aim_runtime.hpp"
-#include "tools/exiter.hpp"
-#include "tools/img_tools.hpp"
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
-#include "tools/plotter.hpp"
+#include "tools/runtime/exiter.hpp"
+#include "tools/vision/img_tools.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
+#include "tools/runtime/plotter.hpp"
 
 const std::string keys =
   "{help h usage ? |                   | 输出命令行参数说明 }"

@@ -8,7 +8,7 @@
 
 #include "sp_msgs/msg/autoaim_target_msg.hpp"
 #include "sp_msgs/msg/enemy_status_msg.hpp"
-#include "tools/thread_safe_queue.hpp"
+#include "tools/concurrency/thread_safe_queue.hpp"
 
 namespace io
 {
