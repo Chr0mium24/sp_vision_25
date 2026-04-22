@@ -157,12 +157,6 @@ add_executable(auto_aim_ui_tune diagnostics/auto_aim/auto_aim_ui_tune.cpp)
 target_link_libraries(auto_aim_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 target_link_libraries(auto_aim_ui_tune ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 
-add_executable(gimbal_axis_diag_test diagnostics/gimbal/gimbal_axis_diag_test.cpp)
-target_link_libraries(gimbal_axis_diag_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
-
-add_executable(gimbal_manual_axis_diag_test diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp)
-target_link_libraries(gimbal_manual_axis_diag_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
-
 add_executable(gimbal_serial_probe diagnostics/gimbal/gimbal_serial_probe.cpp)
 target_link_libraries(gimbal_serial_probe ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io)
 
@@ -210,8 +204,6 @@ set_diag_output(auto_aim_ui_test auto_aim)
 set_diag_output(auto_aim_ui_tune auto_aim)
 set_diag_output(auto_buff_debug auto_buff)
 set_diag_output(auto_buff_debug_mpc auto_buff)
-set_diag_output(gimbal_axis_diag_test gimbal)
-set_diag_output(gimbal_manual_axis_diag_test gimbal)
 set_diag_output(gimbal_serial_probe gimbal)
 set_diag_output(gimbal_link_diag_test gimbal)
 

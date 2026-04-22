@@ -744,7 +744,23 @@ config/
 
 建议后续：
 
-- 继续收口 `gimbal_link_diag_test.cpp`、`gimbal_serial_probe.cpp`、`gimbal_axis_diag_test.cpp`、`gimbal_manual_axis_diag_test.cpp`
+- 继续收口 `gimbal_link_diag_test.cpp`、`gimbal_serial_probe.cpp`
+
+#### [diagnostics/gimbal/gimbal_axis_diag_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/gimbal/gimbal_axis_diag_test.cpp)
+
+当前状态：
+
+- 已迁移到 Python 侧的 `GimbalSession`
+- `sp-vision-diagnose gimbal axis` 现在直接走 Python
+- 对应 C++ 源文件和 CMake 目标已删除
+
+#### [diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp)
+
+当前状态：
+
+- 已迁移到 Python 侧的 `GimbalSession`
+- `sp-vision-diagnose gimbal manual-axis` 现在直接走 Python
+- 对应 C++ 源文件和 CMake 目标已删除
 
 #### [diagnostics/auto_aim/auto_aim_ui_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/auto_aim/auto_aim_ui_test.cpp)
 

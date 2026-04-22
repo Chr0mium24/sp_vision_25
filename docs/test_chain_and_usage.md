@@ -154,7 +154,7 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.y
 - 联调诊断（`build/bin/diag`）：
 - `auto_aim`: `auto_aim_ui_test`, `auto_aim_ui_tune`
 - `auto_buff`: `auto_buff_debug`, `auto_buff_debug_mpc`
-- `gimbal`: `gimbal_link_diag_test`, `gimbal_serial_probe`, `gimbal_axis_diag_test`, `gimbal_manual_axis_diag_test`
+- `gimbal`: `gimbal_link_diag_test`, `gimbal_serial_probe`
 
 ## 4. 常见问题
 

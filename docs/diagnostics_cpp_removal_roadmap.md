@@ -12,8 +12,6 @@
 
 - `diagnostics/gimbal/gimbal_link_diag_test.cpp`
 - `diagnostics/gimbal/gimbal_serial_probe.cpp`
-- `diagnostics/gimbal/gimbal_axis_diag_test.cpp`
-- `diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp`
 - `diagnostics/auto_aim/auto_aim_ui_test.cpp`
 - `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
 
@@ -28,7 +26,6 @@
 - 云台姿态读取
 - 控制模式交互
 - 脚本化控制
-- 轴向诊断
 
 ### 2.2 Auto Aim 诊断组
 
@@ -66,7 +63,7 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 后续建议：
 
-- 继续把 `quick/rxonly/proto/probe/scan/axis/manual-axis` 也逐步转到 Python
+- 继续把 `quick/rxonly/proto/probe/scan` 逐步转到 Python
 
 ### 4.2 `diagnostics/gimbal/gimbal_link_diag_test.cpp`
 
@@ -99,36 +96,7 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 - `sp-vision-diagnose gimbal probe/probe-raw` 完全替代
 
-### 4.4 `diagnostics/gimbal/gimbal_axis_diag_test.cpp`
-
-当前问题：
-
-- 轴向诊断逻辑还在 C++ 可执行文件里
-
-替代方向：
-
-- Python TUI / CLI 负责参数输入
-- 真实发送和姿态回读由 `io::Gimbal` 提供
-
-删除条件：
-
-- Python 版 `axis` 命令已经能完整覆盖现有行为
-
-### 4.5 `diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp`
-
-当前问题：
-
-- 手动轴向调试仍依赖独立二进制
-
-替代方向：
-
-- 合并到 Python 侧的 gimbal 页面
-
-删除条件：
-
-- `sp-vision-diagnose gimbal manual-axis` 不再依赖独立 C++ 入口
-
-### 4.6 `diagnostics/auto_aim/auto_aim_ui_test.cpp`
+### 4.4 `diagnostics/auto_aim/auto_aim_ui_test.cpp`
 
 当前问题：
 
@@ -144,7 +112,7 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 - `sp-vision-diagnose auto-aim armor-box/armor-intent/armor-rec/armor-offline/rune-box/rune-rec/rune-online/rune-online-mpc` 已完全由 Python + `pybind11` 接管
 
-### 4.7 `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
+### 4.5 `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
 
 当前问题：
 

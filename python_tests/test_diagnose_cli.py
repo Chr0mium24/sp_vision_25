@@ -115,6 +115,36 @@ def test_gimbal_quick_is_handled_in_python(monkeypatch):
     assert called == [("quick", None, [])]
 
 
+def test_gimbal_axis_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions, "run_gimbal_axis", lambda config, extra_args: called.append((config, extra_args)) or 0
+    )
+    result = runner.invoke(app, ["gimbal", "axis", "--step-deg=6"])
+    assert result.exit_code == 0
+    assert called == [(default_config_path(), ["--step-deg=6"])]
+
+
+def test_gimbal_manual_axis_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions,
+        "run_gimbal_manual_axis",
+        lambda config, extra_args: called.append((config, extra_args)) or 0,
+    )
+    result = runner.invoke(app, ["gimbal", "manual-axis", "--wait-valid-ms=1000"])
+    assert result.exit_code == 0
+    assert called == [(default_config_path(), ["--wait-valid-ms=1000"])]
+
+
 def test_gimbal_snapshot_is_handled_in_python(monkeypatch):
     called = []
 

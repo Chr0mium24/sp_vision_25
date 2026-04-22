@@ -165,3 +165,16 @@
 - `sp-vision-diagnose gimbal snapshot/watch/control/script-control` 现在直接走 Python + `pybind11`
 - 删除了 `diagnostics/gimbal/gimbal_ui_test.cpp` 和对应的 CMake 目标，gimbal 的状态/控制链路从这里开始正式离开旧 C++ UI
 - `gimbal list` 也同步收口，移除了不再使用的 `gimbal_ui_test`
+
+### 23. gimbal 轴向诊断迁移
+
+- 在 `gimbal_session.py` 中补齐了 `axis` 和 `manual-axis` 的 Python 实现
+- `sp-vision-diagnose gimbal axis`、`sp-vision-diagnose gimbal manual-axis` 现在都直接走 Python 会话，不再依赖独立 C++ 诊断二进制
+- 删除了 `diagnostics/gimbal/gimbal_axis_diag_test.cpp`、`diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp`
+- 对应的 CMake 目标也一并移除，gimbal 的高频交互诊断链路继续向 Python 收口
+
+### 24. gimbal 二进制清单收口
+
+- `gimbal list` 现在只展示仍然保留的 C++ 后端：`gimbal_link_diag_test` 和 `gimbal_serial_probe`
+- `gimbal_axis_diag_test`、`gimbal_manual_axis_diag_test`、`gimbal_ui_test` 都已经从清单和构建中移除
+- 这一步把 gimbal 的 Python / C++ 边界进一步收紧，后续只剩 link/probe 两条更底层的诊断链路还需要继续迁移

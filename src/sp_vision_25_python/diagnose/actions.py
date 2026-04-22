@@ -8,7 +8,14 @@ from rich.console import Console
 
 from .config import read_scalar, update_scalar
 from .inventory import binary_path
-from .gimbal_session import run_gimbal_control, run_gimbal_script_control, run_gimbal_snapshot, run_gimbal_watch
+from .gimbal_session import (
+    run_gimbal_axis,
+    run_gimbal_control,
+    run_gimbal_manual_axis,
+    run_gimbal_script_control,
+    run_gimbal_snapshot,
+    run_gimbal_watch,
+)
 from .runner import run_executable
 from .paths import repo_root
 from .system import command_exists, default_config_path, gimbal_scan_ports, run_and_capture, run_silently
@@ -426,9 +433,9 @@ def handle_gimbal_action(action: str, config: Path | None, extra_args: list[str]
     if action == "script-control":
         return run_gimbal_script_control(cfg, extra_args)
     if action == "axis":
-        return run_executable(binary_path("gimbal", "gimbal_axis_diag_test"), [str(cfg), *extra_args])
+        return run_gimbal_axis(cfg, extra_args)
     if action == "manual-axis":
-        return run_executable(binary_path("gimbal", "gimbal_manual_axis_diag_test"), [str(cfg), *extra_args])
+        return run_gimbal_manual_axis(cfg, extra_args)
     return None
 
 
