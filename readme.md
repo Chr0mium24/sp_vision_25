@@ -92,6 +92,10 @@ IMU型号：使用C板内置BMI088作为IMU\
     ```bash
     bash scripts/init_env.sh
     ```
+    这个脚本会自动配置 Intel OpenVINO 的 APT 源并安装 OpenVINO；MindVision / HikRobot 相机 SDK 需要你把本地安装包路径传给脚本，例如：
+    ```bash
+    bash scripts/init_env.sh --mindvision-installer /path/to/MindVisionSDK.sh --hikrobot-installer /path/to/HikRobotSDK.deb
+    ```
     如需切换 Python 版本：
     ```bash
     uv python install 3.12
