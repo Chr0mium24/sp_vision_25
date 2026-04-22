@@ -139,3 +139,9 @@
 - 将本地 `build_backend.py` 的 editable 构建改成源码链接式安装
 - 现在 `uv run` 直接读取 `src/` 下的 Python 代码，不再依赖旧 wheel 拷贝
 - 这能显著减少“改了源码但运行结果还是旧代码”的错觉和额外重装次数
+
+### 20. TUI 仪表盘升级
+
+- 将 `diagnose/tui.py` 从静态骨架升级为可刷新的仪表盘
+- 现在 TUI 会展示 workspace 状态、pybind11 状态，以及 camera / gimbal / auto-aim 的二进制清单
+- 为三个业务域补充了常用命令入口提示，后续可以继续在这里挂动态参数面板
