@@ -17,9 +17,9 @@
 
 ## 1. 当前问题总结
 
-当前 diagnose 体系的主要问题不是“脚本语言是 Bash”，而是职责混杂：
+当前 diagnose 体系的主要问题不是“脚本语言是 Bash”，而是职责混杂。迁移已经进入收尾阶段，当前 Python diagnose 入口和 TUI 已经可用，三个旧 `diagnose.sh` 包装也已经删除：
 
-- `diagnostics/*/diagnose.sh` 同时负责命令路由、设备释放、参数编辑、二进制调用
+- 旧的 `diagnostics/*/diagnose.sh` 过去同时负责命令路由、设备释放、参数编辑、二进制调用
 - 多个 C++ diagnose 程序同时负责：
   - 业务逻辑
   - 命令行解析
@@ -29,9 +29,9 @@
 
 典型现状：
 
-- `diagnostics/camera/diagnose.sh`：集成设备释放、信息查看、配置编辑、命令分发
-- `diagnostics/auto_aim/diagnose.sh`：集成在线/离线调试、rune 调参、YAML 原位修改
-- `diagnostics/gimbal/diagnose.sh`：集成串口诊断、控制模式切换、端口信息查看
+- `diagnostics/camera/diagnose.sh`：历史上集成设备释放、信息查看、配置编辑、命令分发
+- `diagnostics/auto_aim/diagnose.sh`：历史上集成在线/离线调试、rune 调参、YAML 原位修改
+- `diagnostics/gimbal/diagnose.sh`：历史上集成串口诊断、控制模式切换、端口信息查看
 - `diagnostics/auto_aim/auto_aim_ui_tune.cpp`：既负责 runtime，又负责 TUI，又负责 YAML 回写
 - `io/camera.cpp`、`io/cboard.cpp`、`tasks/auto_aim/detector.cpp`、`tasks/auto_aim/planner/planner.cpp` 等：构造时直接从 `config_path` 读取 YAML
 
@@ -261,19 +261,13 @@ bindings/
 建议主入口命令统一为：
 
 ```bash
-uv run python -m diagnose
-```
-
-或在 `pyproject.toml` 中注册为：
-
-```bash
-uv run sp-diagnose
+uv run sp-vision-diagnose
 ```
 
 ### 4.1 顶层命令树
 
 ```text
-sp-diagnose
+sp-vision-diagnose
 ├── build
 ├── doctor
 ├── config
@@ -287,26 +281,26 @@ sp-diagnose
 ### 4.2 详细命令树
 
 ```text
-sp-diagnose build
+sp-vision-diagnose build
 ├── all
 ├── target <name>
 └── status
 
-sp-diagnose doctor
+sp-vision-diagnose doctor
 ├── env
 ├── binaries
 ├── camera
 ├── serial
 └── openvino
 
-sp-diagnose config
+sp-vision-diagnose config
 ├── show <config.yaml>
 ├── validate <config.yaml>
 ├── diff <old.yaml> <new.yaml>
 ├── patch <config.yaml> --set key=value
 └── export-runtime <config.yaml>
 
-sp-diagnose camera
+sp-vision-diagnose camera
 ├── info
 ├── list
 ├── release
@@ -317,7 +311,7 @@ sp-diagnose camera
 ├── thread [config]
 └── handeye [config]
 
-sp-diagnose gimbal
+sp-vision-diagnose gimbal
 ├── quick [config]
 ├── rxonly [config]
 ├── proto [config]
@@ -330,7 +324,7 @@ sp-diagnose gimbal
 ├── manual-axis [config]
 └── port-info [config]
 
-sp-diagnose auto-aim
+sp-vision-diagnose auto-aim
 ├── list
 ├── armor-box [config]
 ├── armor-intent [config]
@@ -340,13 +334,13 @@ sp-diagnose auto-aim
 ├── rune-online-mpc [config]
 └── session [config]
 
-sp-diagnose tune
+sp-vision-diagnose tune
 ├── auto-aim [config]
 ├── camera [config]
 ├── planner [config]
 └── export [config]
 
-sp-diagnose tui
+sp-vision-diagnose tui
 ├── home
 ├── camera [config]
 ├── gimbal [config]
@@ -356,7 +350,7 @@ sp-diagnose tui
 
 设计原则：
 
-- 与当前 `diagnostics/*/diagnose.sh` 的动作尽量一一对应，降低迁移摩擦
+- 与历史 `diagnostics/*/diagnose.sh` 的动作尽量一一对应，降低迁移摩擦
 - `doctor` 负责环境检查，避免把“环境问题”塞进业务命令
 - `config` 与 `tune` 分离：
   - `config` 负责静态文件
@@ -790,7 +784,7 @@ config/
 
 - 最终由 Python `tune auto-aim` 替代
 
-### 8.6 Bash diagnose 脚本
+### 8.6 Bash diagnose 脚本（历史）
 
 #### [diagnostics/gimbal/diagnose.sh](/home/cr/Codes/sp_vision_25/diagnostics/gimbal/diagnose.sh)
 #### [diagnostics/camera/diagnose.sh](/home/cr/Codes/sp_vision_25/diagnostics/camera/diagnose.sh)
@@ -799,23 +793,23 @@ config/
 建议修改：
 
 - 不再继续扩展 Bash 能力
-- 迁移后改为薄 shim：
+- 该阶段曾短暂改为薄 shim，现已删除：
 
 ```bash
 #!/usr/bin/env bash
-uv run sp-diagnose gimbal "$@"
+uv run sp-vision-diagnose gimbal "$@"
 ```
 
 目标：
 
-- 保持旧入口兼容
-- 实际逻辑全部转移到 Python
+- 保持旧入口兼容的阶段已经结束
+- 实际逻辑已经全部转移到 Python
 
 ## 9. 迁移顺序
 
 建议分四个阶段。
 
-### 第一阶段：Python 包装层落地
+### 第一阶段：Python 包装层落地（已完成）
 
 目标：
 
@@ -968,7 +962,7 @@ Python 改 YAML
 迁移开始后建议同步维护以下文档：
 
 - 在 [docs/test_chain_and_usage.md](/home/cr/Codes/sp_vision_25/docs/test_chain_and_usage.md) 追加 Python diagnose 入口说明
-- 在 `readme.md` 中保留旧 `diagnostics/*.sh` 用法，但标明其将逐步迁移到 `uv run sp-diagnose`
+- 在 `readme.md` 中保留 `sp-vision-diagnose` 用法，并在历史备注里说明旧 `diagnostics/*.sh` 已删除
 - 为每个迁移完成的模块单独补一页：
   - `docs/diagnose/gimbal_python_diagnose.md`
   - `docs/diagnose/camera_python_diagnose.md`
