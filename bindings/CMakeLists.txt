@@ -20,23 +20,32 @@ add_library(sp_vision_bindings MODULE
     auto_aim/target_bindings.cpp
     auto_aim/tracker_bindings.cpp
     auto_aim/aimer_bindings.cpp
+    auto_aim/runtime_bindings.cpp
     ${PROJECT_SOURCE_DIR}/tools/crc.cpp
     ${PROJECT_SOURCE_DIR}/tools/extended_kalman_filter.cpp
     ${PROJECT_SOURCE_DIR}/tools/logger.cpp
     ${PROJECT_SOURCE_DIR}/tools/math_tools.cpp
+    ${PROJECT_SOURCE_DIR}/tools/img_tools.cpp
     ${PROJECT_SOURCE_DIR}/tools/trajectory.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/armor.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/solver.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/target.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/tracker.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/aimer.cpp
+    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/auto_aim_runtime.cpp
+    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/yolo.cpp
+    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/classifier.cpp
+    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/detector.cpp
+    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/yolos/yolov5.cpp
+    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/yolos/yolov8.cpp
+    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/yolos/yolo11.cpp
 )
 
 target_include_directories(sp_vision_bindings PRIVATE
     "${PROJECT_SOURCE_DIR}"
     "${PYBIND11_INCLUDE_DIR}"
 )
-target_link_libraries(sp_vision_bindings PRIVATE Python3::Module yaml-cpp fmt::fmt spdlog::spdlog ${OpenCV_LIBS})
+target_link_libraries(sp_vision_bindings PRIVATE Python3::Module yaml-cpp fmt::fmt spdlog::spdlog ${OpenCV_LIBS} openvino::runtime)
 set_target_properties(sp_vision_bindings PROPERTIES
     PREFIX ""
     OUTPUT_NAME "sp_vision_bindings"

@@ -67,3 +67,10 @@
 - Python 侧可以读取 `AimerDebug`
 - 新增了 `python_tests/test_aimer_binding.py`
 - 当前 Python 测试已覆盖 CRC、EKF、Armor、Solver、Target、Tracker、Aimer
+
+### 10. Runtime 绑定
+
+- 新增了 `auto_aim::Runtime` 的 Python 绑定
+- Python 侧可以直接输入 numpy 图像与四元数，调用真实 runtime step
+- 新增了 `python_tests/test_runtime_binding.py`
+- 当前 Python 测试已覆盖 CRC、EKF、Armor、Solver、Target、Tracker、Aimer、Runtime
