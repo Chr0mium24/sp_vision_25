@@ -51,3 +51,11 @@
 - Python 侧可以直接调用 `predict` / `update`
 - 新增了 `python_tests/test_target_binding.py`
 - 当前 Python 测试已覆盖 CRC、EKF、Armor、Solver、Target
+
+### 8. Tracker 绑定
+
+- 新增了 `auto_aim::Tracker` 的 Python 绑定
+- Python 侧可以直接基于真实 `Solver` 和 `Armor` 列表驱动 Tracker 状态机
+- Python 侧可以读取 `state` 与调试信息
+- 新增了 `python_tests/test_tracker_binding.py`
+- 当前 Python 测试已覆盖 CRC、EKF、Armor、Solver、Target、Tracker
