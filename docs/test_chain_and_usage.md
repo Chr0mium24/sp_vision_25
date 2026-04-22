@@ -21,11 +21,14 @@ build/bin/tests/<group>/<executable>
 build/bin/diag/<group>/<executable>
 ```
 
+Python 标定与诊断入口直接通过 `uv run` 暴露，不再依赖 `build/bin/diag` 下的独立二进制。
+
 例如：
 
 ```bash
 build/bin/tests/auto_buff/auto_power_rune_test
 UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim list
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration help
 ```
 
 ## 2. 核心测试链路（推荐）
@@ -147,11 +150,12 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.y
 - `auto_buff`: `auto_power_rune_test`
 - `gimbal`: `gimbal_test`, `gimbal_response_test`
 - `camera`: `camera_test`, `camera_detect_test`, `camera_save_test`, `camera_thread_test`, `camera_window_test`, `usbcamera_test`, `usbcamera_detect_test`, `multi_usbcamera_test`, `handeye_test`
+- `calibration`（Python 入口）：`sp-vision-calibration capture/calibrate-camera/calibrate-handeye/calibrate-robotworld-handeye/split-video`
 - `planner`: `planner_test`, `planner_test_offline`
 - `system`: `cboard_test`, `dm_test`
 - `ros2`（仅 ROS2 依赖满足时编译）：`publish_test`, `subscribe_test`, `topic_loop_test`
 - 联调诊断（`build/bin/diag`）：
-- `auto_aim`: `auto_aim_ui_tune`
+- `auto_aim`: `auto_aim_ui_tune`（过渡实现，后续会继续收口）
 - `auto_buff`: `auto_buff_debug`, `auto_buff_debug_mpc`
 - `gimbal`: Python diagnose commands only
 
@@ -169,6 +173,6 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.y
 - 只编译单个测试：
 
 ```bash
-cmake --build build -j"$(nproc)" --target auto_aim_ui_tune
+cmake --build build -j"$(nproc)" --target auto_aim_test
 cmake --build build -j"$(nproc)" --target auto_power_rune_test
 ```

@@ -4,12 +4,12 @@
 
 ## 1. 前置条件
 
-- 已完成编译，且存在下列可执行文件：
-  - `build/bin/diag/auto_aim/auto_aim_ui_tune`
-  - `build/bin/tests/auto_buff/auto_power_rune_test`
+- 已完成编译，且 Python 入口可用：
+  - `sp-vision-diagnose`
+  - `sp-vision-calibration`（如果你还在跑标定流程）
 - 相机和云台在线联调时，串口/相机链路已正常（可先用 gimbal/camera diagnose 确认）。
 
-如缺少二进制，可先执行：
+如缺少入口，可先执行：
 
 ```bash
 bash build.sh
@@ -58,6 +58,11 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-rec configs/
 ```bash
 UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-tune configs/standard3.yaml
 ```
+
+说明：
+
+- 当前 `armor-tune` 仍然通过过渡性的 C++ `auto_aim_ui_tune.cpp` 承担交互编辑，但 Python 入口已经接管命令路由和文档入口。
+- 后续若继续精简，会优先把 YAML 回写和交互面板再往 Python TUI 收口。
 
 关键交互：
 
