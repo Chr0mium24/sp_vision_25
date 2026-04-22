@@ -83,3 +83,15 @@
 - 现有 Bash diagnose 脚本已被 Python 命令统一桥接
 - 将 Python 构建后端改为仓库内本地 backend，避免 `uv` 依赖外网拉取 build backend
 - 统一入口已经可以直接查看构建状态、绑定状态，并转发到现有 camera/gimbal/auto_aim 诊断脚本
+
+### 12. Python 先接管 list 类命令
+
+- 新增了 `diagnose/inventory.py`
+- 将 `camera list`、`gimbal list`、`auto-aim list` 改为 Python 直接输出
+- 这三类列表命令现在只检查构建产物存在性，不再依赖 Bash 脚本
+- 新增了对应 CLI 测试，验证这三条路径都已经从 Python 侧接管
+
+### 13. list 输出收敛
+
+- 将 `list` 的输出切回标准文本输出，避免 Rich 自动换行和样式干扰
+- 继续保留对 Bash 桥接的 guard 测试，确保这三条命令不会回落到旧脚本

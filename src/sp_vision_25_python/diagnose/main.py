@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.table import Table
 
 from .bindings import binding_status
+from .inventory import print_binary_status
 from .paths import build_dir, build_python_dir, diagnose_script, repo_root
 from .runner import run_script
 
@@ -87,6 +88,10 @@ def _run_diagnose_script(domain: str, action: str, config: Path | None, extra_ar
     return run_script(script, args)
 
 
+def _run_list(domain: str) -> None:
+    print_binary_status(domain)
+
+
 @app.command()
 def camera(
     ctx: typer.Context,
@@ -95,6 +100,9 @@ def camera(
 ) -> None:
     """Bridge to diagnostics/camera/diagnose.sh while we migrate the workflow."""
 
+    if action == "list":
+        _run_list("camera")
+        return
     raise typer.Exit(code=_run_diagnose_script("camera", action, config, list(ctx.args)))
 
 
@@ -106,6 +114,9 @@ def gimbal(
 ) -> None:
     """Bridge to diagnostics/gimbal/diagnose.sh while we migrate the workflow."""
 
+    if action == "list":
+        _run_list("gimbal")
+        return
     raise typer.Exit(code=_run_diagnose_script("gimbal", action, config, list(ctx.args)))
 
 
@@ -117,6 +128,9 @@ def auto_aim(
 ) -> None:
     """Bridge to diagnostics/auto_aim/diagnose.sh while we migrate the workflow."""
 
+    if action == "list":
+        _run_list("auto_aim")
+        return
     raise typer.Exit(code=_run_diagnose_script("auto_aim", action, config, list(ctx.args)))
 
 
