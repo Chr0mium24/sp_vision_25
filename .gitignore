@@ -22,6 +22,7 @@ __pycache__/
 .pytest_cache/
 *.pyc
 *.txt
+!CMakeLists.txt
 
 references/
 .codex
