@@ -29,6 +29,8 @@ using namespace std::chrono_literals;
 
 namespace
 {
+// Transitional C++ tune UI: Python owns the CLI and persistence layer now.
+// Keep this file focused on the interactive tuning loop and runtime preview.
 struct UiState
 {
   bool tracking = true;
