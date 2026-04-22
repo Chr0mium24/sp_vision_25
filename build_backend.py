@@ -60,7 +60,11 @@ def _wheel_file() -> str:
 
 
 def _entry_points() -> str:
-    return "[console_scripts]\nsp-vision-diagnose = sp_vision_25_python.diagnose.main:main\n"
+    return (
+        "[console_scripts]\n"
+        "sp-vision-diagnose = sp_vision_25_python.diagnose.main:main\n"
+        "sp-vision-calibration = sp_vision_25_python.calibration.main:main\n"
+    )
 
 
 def _hash(data: bytes) -> tuple[str, str]:

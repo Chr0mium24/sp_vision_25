@@ -122,12 +122,22 @@ IMU型号：使用C板内置BMI088作为IMU\
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose tui
     ```
 
-5. 运行demo:
+5. Python 标定入口（可选）
+    标定相关的小工具也已经迁移到 Python，统一入口是 `sp-vision-calibration`：
+    ```bash
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration capture configs/calibration.yaml assets/img_with_q --imu
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration calibrate-camera assets/img_with_q -c configs/calibration.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration calibrate-handeye assets/img_with_q -c configs/calibration.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration calibrate-robotworld-handeye assets/img_with_q -c configs/calibration.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration split-video records/Big/2024-05-14_11-6-26 -p records/Big/2024-05-14_11-6-26_cut
+    ```
+
+6. 运行demo:
     ```bash
     ./build/bin/tests/auto_aim/auto_aim_test
     ```
 
-6. 注册自启：
+7. 注册自启：
     1. 确保已安装`screen`:
         ```
         sudo apt install screen
@@ -226,11 +236,7 @@ IMU型号：使用C板内置BMI088作为IMU\
 sp_vision_25
 ├── assets         // 包含demo素材、网络权重等
 │   └── ...
-├── calibration    // 标定相关程序
-│   ├── calibrate_camera.cpp             // 相机内参标定程序
-│   ├── calibrate_handeye.cpp            // 手眼标定程序
-│   ├── calibrate_robotworld_handeye.cpp // 手眼标定程序（同时计算标定板位置）
-│   └── capture.cpp                      // 相机标定数据采集程序
+├── calibration    // 标定流程已迁移到 Python 的 sp-vision-calibration 入口
 ├── CMakeLists.txt // CMake配置文件
 ├── configs        // 每台机器人的YAML配置文件
 │   └── ...
