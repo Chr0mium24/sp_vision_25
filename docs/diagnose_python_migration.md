@@ -5,6 +5,8 @@
 - 用 Python 统一承接 diagnose 命令入口、TUI、配置编辑、设备探测与日志展示
 - 保留 C++ 作为实时算法与硬件交互基座
 - 将“运行时可调参数”从“改 YAML 文件 + 重新加载”逐步迁移到“Python 控制面 -> C++ 运行时参数接口”
+- 明确 Python 不重写核心算法，白盒 diagnose/test 必须复用真实 C++ 实现
+- 将 `pybind11` 视为核心路线，而不是可选增强
 
 本文档回答四个问题：
 
@@ -39,6 +41,16 @@
 - 动态调参只能通过“写配置文件”间接实现
 - Python 无法平滑接管控制面
 
+除此之外，还有一个更关键的问题：
+
+- 如果 Python diagnose/test 自己重写 CRC、卡尔曼滤波、planner、tracker 等逻辑，那么测试结果会逐渐偏离真实线上 C++ 行为，最终失去 diagnose 的可信度
+
+因此本文档的前提约束是：
+
+- Python 只负责控制面、配置、界面和编排
+- 核心算法和核心协议逻辑必须复用现有 C++ 实现
+- 对于白盒测试、精细调参与高可信 diagnose，必须优先通过 `pybind11` 复用 C++ 核心模块
+
 ## 2. 目标架构
 
 建议迁移到三层结构：
@@ -70,6 +82,12 @@
 - 日志查看/会话记录
 - 调用 C++ 二进制或 pybind11 模块
 
+不负责：
+
+- 重写 CRC
+- 重写卡尔曼滤波
+- 重写 planner/tracker/solver 等核心算法
+
 推荐技术选型：
 
 - CLI：`Typer`
@@ -90,10 +108,63 @@
 - Python 通过 `subprocess` 启动现有 C++ 可执行文件
 - 以命令行参数传递配置路径、模式、运行时 patch 文件或 patch 参数
 
-中期：
+中期与长期：
 
-- 通过 pybind11 暴露最小运行时接口
+- 通过 `pybind11` 暴露核心模块和运行时接口
 - Python 直接持有 runtime/controller/diagnose session
+- Python diagnose/test 通过绑定层复用真实 C++ 实现
+
+这里需要明确：
+
+- `subprocess` 只适合黑盒 diagnose 和命令入口统一
+- 只要涉及白盒诊断、动态调参、精确状态观测、单元测试一致性，就必须接入 `pybind11`
+
+## 2.4 黑盒 diagnose 与白盒 diagnose
+
+建议将 Python diagnose 明确拆成两类：
+
+### 黑盒 diagnose
+
+特点：
+
+- 通过现有 C++ 可执行文件工作
+- Python 负责命令路由、日志、环境检查、TUI 编排
+- 不直接进入算法内部
+
+适用场景：
+
+- 相机联通性检查
+- 串口/端口扫描
+- 启停现有 diagnose 程序
+- 离线回放任务编排
+
+实现方式：
+
+- `subprocess` + 统一 CLI/TUI
+
+### 白盒 diagnose
+
+特点：
+
+- 直接访问真实 C++ 模块内部状态和接口
+- 需要运行时更新参数
+- 需要精确复用线上实现
+
+适用场景：
+
+- CRC 测试
+- 卡尔曼滤波单测与中间状态检查
+- planner/tracker/solver 调参与快照
+- runtime 内部状态观测
+
+实现方式：
+
+- `pybind11`
+
+因此迁移策略不是“是否使用 pybind11”，而是：
+
+- 黑盒能力短期可由 `subprocess` 承接
+- 白盒能力必须由 `pybind11` 承接
 
 ## 3. Python Diagnose 目录结构
 
@@ -157,7 +228,27 @@ python/
 - `python/diagnose/services/*`：按业务域封装 diagnose 行为
 - `python/diagnose/tui/*`：Textual UI
 
-如果后续接入 pybind11，建议单独放 `python/bindings/` 或在 `src/` 下新增绑定模块目录，不要和 diagnose app 混在一起。
+绑定模块建议单独组织，不与 diagnose app 混在一起。推荐目录：
+
+```text
+bindings/
+├── CMakeLists.txt
+├── module.cpp
+├── tools/
+│   ├── crc_bindings.cpp
+│   └── ekf_bindings.cpp
+└── auto_aim/
+    ├── planner_bindings.cpp
+    ├── solver_bindings.cpp
+    ├── tracker_bindings.cpp
+    └── runtime_bindings.cpp
+```
+
+原因：
+
+- diagnose app 迭代速度快
+- 绑定层与 C++ ABI、头文件、生命周期管理强相关
+- 单独组织更利于分批推进与测试
 
 ## 4. Python Diagnose 命令树
 
@@ -311,7 +402,8 @@ sp-diagnose tui
 建议：
 
 - Python TUI 持有当前 runtime patch
-- 通过 pybind11 或进程接口发送到 C++
+- 优先通过 `pybind11` 发送到 C++
+- 只有临时过渡阶段才考虑进程参数或 patch 文件
 - 需要持久化时，再由 Python 写回 YAML
 
 ### 5.3 调试会话配置
@@ -346,6 +438,16 @@ sp-diagnose tui
 - `io`、`tasks`、`tools` 已具备较明确模块边界
 - diagnose 相关可执行文件可以作为 Python 的第一阶段后端
 
+但这里的“能用”仅表示：
+
+- 可以作为黑盒 diagnose 的后端
+- 可以作为 `pybind11` 绑定的源代码基础
+
+不表示：
+
+- Python 可以靠重写算法替代它
+- 也不表示只靠 `subprocess` 就足够支撑长期 diagnose/test 体系
+
 ### 6.2 现在为什么还不够好
 
 不够好主要体现在三个方面：
@@ -358,6 +460,7 @@ sp-diagnose tui
 
 - C++ 基座足够作为迁移起点
 - 但要支持长期的 Python diagnose，必须做接口整理
+- 并且必须规划 `pybind11` 绑定层
 
 ## 7. C++ 配置接口改造总原则
 
@@ -390,6 +493,12 @@ config/
 - `DetectorConfig`
 - `RuntimePatch`
 
+同时建议新增一组绑定目标：
+
+- `sp_vision_bindings_tools`
+- `sp_vision_bindings_auto_aim`
+- `sp_vision_bindings_runtime`
+
 ## 8. 文件级改造清单
 
 下面列出第一阶段应重点修改的文件。
@@ -415,6 +524,11 @@ config/
 
 - 让上层决定如何处理错误
 - Python 层可以把错误显示在 TUI，而不是进程直接退出
+
+这一步对 `pybind11` 也很关键：
+
+- 绑定层最怕底层直接 `exit(1)`
+- 改为异常后，Python 端才能拿到可展示、可断言的错误
 
 #### 新增 `config/` 目录
 
@@ -545,6 +659,7 @@ config/
 目标：
 
 - 让 planner 成为最先支持热更新的模块
+- 让 planner 成为第一批 `pybind11` 绑定对象
 
 #### [tasks/auto_aim/auto_aim_runtime.cpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/auto_aim_runtime.cpp)
 #### [tasks/auto_aim/auto_aim_runtime.hpp](/home/cr/Codes/sp_vision_25/tasks/auto_aim/auto_aim_runtime.hpp)
@@ -565,7 +680,59 @@ config/
 
 - 成为 Python diagnose 的优先绑定目标
 
-### 8.4 Diagnose 程序本身
+建议在这里新增的不是文件路径接口，而是绑定友好的对象接口：
+
+- `AutoAimDebugSnapshot snapshot() const`
+- `void update_tuning(const AutoAimTuningConfig&)`
+- `void reset()`
+- `StepResult step(...)`
+
+这样 Python 端才能真正把它当 diagnose session 使用
+
+### 8.4 Tools 层优先绑定对象
+
+这部分虽然不是 diagnose 可执行文件，但对“Python diagnose/test 是否可信”至关重要。
+
+#### [tools/crc.hpp](/home/cr/Codes/sp_vision_25/tools/crc.hpp)
+#### [tools/crc.cpp](/home/cr/Codes/sp_vision_25/tools/crc.cpp)
+
+建议修改：
+
+- 保持实现不变
+- 增加清晰的绑定入口函数
+
+建议绑定内容：
+
+- `get_crc8`
+- `get_crc16`
+- 如有必要，增加 buffer/list/bytes 适配
+
+目标：
+
+- Python 侧协议测试直接复用真实 C++ CRC 实现
+
+#### [tools/extended_kalman_filter.hpp](/home/cr/Codes/sp_vision_25/tools/extended_kalman_filter.hpp)
+#### [tools/extended_kalman_filter.cpp](/home/cr/Codes/sp_vision_25/tools/extended_kalman_filter.cpp)
+
+建议修改：
+
+- 保持算法实现不变
+- 整理构造、predict、update、state 获取接口
+- 确保无 `exit(1)` 式错误处理
+
+建议绑定内容：
+
+- 构造
+- `predict`
+- `update`
+- `state`
+- 协方差或内部矩阵快照
+
+目标：
+
+- Python 单测和 diagnose 面板直接查看真实 EKF 行为
+
+### 8.5 Diagnose 程序本身
 
 #### [diagnostics/gimbal/gimbal_ui_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/gimbal/gimbal_ui_test.cpp)
 
@@ -617,7 +784,7 @@ config/
 
 - 最终由 Python `tune auto-aim` 替代
 
-### 8.5 Bash diagnose 脚本
+### 8.6 Bash diagnose 脚本
 
 #### [diagnostics/gimbal/diagnose.sh](/home/cr/Codes/sp_vision_25/diagnostics/gimbal/diagnose.sh)
 #### [diagnostics/camera/diagnose.sh](/home/cr/Codes/sp_vision_25/diagnostics/camera/diagnose.sh)
@@ -647,6 +814,7 @@ uv run sp-diagnose gimbal "$@"
 目标：
 
 - 不改 C++ 核心逻辑，只替换 Bash diagnose
+- 明确这一步只解决黑盒 diagnose 的统一入口
 
 内容：
 
@@ -670,14 +838,22 @@ uv run sp-diagnose gimbal "$@"
 - `camera` 以系统信息与设备释放为主，Python 很适合
 - `auto_aim` 最复杂，先保持外层包装
 
-### 第二阶段：配置接口收口
+### 第二阶段：pybind11 第一批绑定 + 配置接口收口
 
 目标：
 
+- 建立白盒 diagnose/test 的最小可用路径
 - 让主要核心类从“读文件”改成“接配置对象”
 
 内容：
 
+- 建立 `bindings/` 目录
+- 接入 `pybind11`
+- 第一批绑定：
+  - `tools/crc`
+  - `tools/extended_kalman_filter`
+  - `tasks/auto_aim/planner`
+  - `tasks/auto_aim/solver`
 - 新增 `config/` 层
 - 改造 `tools/yaml.hpp`
 - 改造：
@@ -687,7 +863,12 @@ uv run sp-diagnose gimbal "$@"
   - `tasks/auto_aim/*`
   - `tasks/auto_buff/*`
 
-### 第三阶段：运行时参数热更新
+原因：
+
+- 这批模块最能直接决定 diagnose/test 的可信度
+- 如果 Python 自己重写它们，最终会和线上 C++ 行为漂移
+
+### 第三阶段：运行时参数热更新与高层绑定
 
 目标：
 
@@ -697,9 +878,10 @@ uv run sp-diagnose gimbal "$@"
 
 - 给 planner/detector/runtime 增加 `update_*` 接口
 - 给 diagnose 会话增加 `snapshot()` 接口
-- 先不必一开始就上 pybind11，也可以先走：
-  - 子进程 + patch 文件
-  - 或本地 socket / stdin 控制通道
+- 绑定：
+  - `tasks/auto_aim/tracker`
+  - `tasks/auto_aim/auto_aim_runtime`
+- 如有必要，补充进程模式作为兼容后备方案
 
 建议：
 
@@ -723,6 +905,7 @@ uv run sp-diagnose gimbal "$@"
 
 - C++ 仅输出状态与接收控制
 - Python 成为 diagnose 控制面
+- Python 白盒测试与 diagnose 面板复用真实 C++ 实现
 
 ## 10. 动态调参链路建议
 
@@ -731,7 +914,7 @@ uv run sp-diagnose gimbal "$@"
 ```text
 Python TUI
   -> 读取 YAML 形成 ConfigModel
-  -> 启动 C++ runtime/session
+  -> 启动 pybind11 runtime/session
   -> 发送 RuntimePatch
   -> 拉取 DebugSnapshot
   -> 用户确认后选择 Save
@@ -751,6 +934,7 @@ Python 改 YAML
 - 文件 I/O 不适合作为运行时控制协议
 - 难以区分“暂存值”和“持久化值”
 - 会让不同模块读到不一致配置
+- 更重要的是，这条链路无法让 Python 直接复用真实 C++ 内部状态
 
 ## 11. 第一批建议落地的改动
 
@@ -758,16 +942,20 @@ Python 改 YAML
 
 1. 新建 Python diagnose CLI 骨架
 2. 先把三个 `diagnose.sh` 迁成 Python 命令
-3. 改 `tools/yaml.hpp`，去掉 `exit(1)`
-4. 为 `Planner` 新增 `PlannerConfig` 与 `update_runtime_config`
-5. 为 `AutoAimRuntime` 增加 `snapshot()` 接口
-6. 将 `auto_aim_ui_tune.cpp` 标记为过渡实现，不再扩展
+3. 接入 `pybind11` 构建链路
+4. 绑定 `tools/crc` 与 `tools/extended_kalman_filter`
+5. 改 `tools/yaml.hpp`，去掉 `exit(1)`
+6. 为 `Planner` 新增 `PlannerConfig` 与 `update_runtime_config`
+7. 绑定 `Planner`
+8. 为 `AutoAimRuntime` 增加 `snapshot()` 接口
+9. 将 `auto_aim_ui_tune.cpp` 标记为过渡实现，不再扩展
 
 这批改动完成后：
 
 - diagnose 外层体验会立刻统一
 - C++ 基座仍保持稳定
-- 后续接入 pybind11 时不会推倒重来
+- Python 已经能开始复用一部分真实 C++ 实现
+- 后续继续扩充绑定时不会推倒重来
 
 ## 12. 文档与代码同步建议
 
@@ -785,8 +973,9 @@ Python 改 YAML
 结论可以概括为三句话：
 
 - Python diagnose 完全值得做，尤其 TUI 建议引入 `Textual`
+- Python 不应该重写核心算法，`pybind11` 是白盒 diagnose/test 的核心路线
 - C++ 基座现在能用，但必须把“配置读取”和“运行时参数”从文件路径里解耦出来
-- 最稳的迁移顺序是：先 Python 包装命令，再收口配置接口，再做热更新，最后接管 TUI
+- 最稳的迁移顺序是：先统一黑盒入口，再接入第一批 `pybind11` 绑定，再收口配置接口与热更新，最后接管 TUI
 
 建议下一步直接进入实现阶段时，先从 `gimbal diagnose` 开始。
 
@@ -795,3 +984,11 @@ Python 改 YAML
 - 命令边界最清晰
 - 风险最低
 - 最能验证 Python CLI/TUI 架构是否顺手
+
+但在 `gimbal diagnose` 骨架并行推进的同时，建议立刻启动第一批绑定：
+
+- `tools/crc`
+- `tools/extended_kalman_filter`
+- `tasks/auto_aim/planner`
+
+因为这三类一旦不复用真实 C++ 实现，Python diagnose/test 的可信度就会快速下降。
