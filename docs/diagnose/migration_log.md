@@ -106,3 +106,8 @@
 - 将 `gimbal quick`、`gimbal rxonly`、`gimbal proto`、`gimbal probe`、`gimbal probe-raw`、`gimbal scan`、`gimbal snapshot`、`gimbal watch`、`gimbal control`、`gimbal script-control`、`gimbal axis`、`gimbal manual-axis` 改为 Python 直接启动 C++ 二进制
 - 将 `auto-aim armor-box`、`armor-intent`、`armor-rec`、`armor-tune`、`armor-offline`、`rune-box`、`rune-rec`、`rune-online`、`rune-online-mpc`、`rune-tune` 改为 Python 直接启动 C++ 二进制
 - 新增了动作级测试和 CLI 分流测试，确保额外参数能正确传递且不会回落到 Bash
+
+### 15. Bash 入口降级为 Python 薄壳
+
+- 将 `diagnostics/camera/diagnose.sh`、`diagnostics/gimbal/diagnose.sh`、`diagnostics/auto_aim/diagnose.sh` 降级为 `uv run sp-vision-diagnose ...` 的薄包装
+- 旧脚本入口仍可用，但真正的业务逻辑已经统一到 Python diagnose 控制面
