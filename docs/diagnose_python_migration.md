@@ -220,6 +220,12 @@ python/
     └── README.md
 ```
 
+各路径职责：
+
+- 这个结构是逻辑分层图，不强制要求和仓库路径一一对应
+- 当前实际落地路径放在 `src/sp_vision_25_python/diagnose/`，这样更适合 `uv` 打包和命令入口安装
+- 绑定模块仍然建议继续放在 `bindings/` 下，与 diagnose 控制面解耦
+
 说明：
 
 - `python/diagnose/cli.py`：Typer 命令树入口

@@ -1,6 +1,7 @@
 [build-system]
-requires = ["hatchling>=1.27.0"]
-build-backend = "hatchling.build"
+requires = []
+build-backend = "build_backend"
+backend-path = ["."]
 
 [project]
 name = "sp-vision-25-python"
@@ -17,13 +18,13 @@ dependencies = [
     "typer>=0.24.1",
 ]
 
+[project.scripts]
+sp-vision-diagnose = "sp_vision_25_python.diagnose.main:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.3.0",
 ]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/sp_vision_25_python"]
 
 [tool.pytest.ini_options]
 testpaths = ["python_tests"]

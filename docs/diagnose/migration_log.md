@@ -74,3 +74,12 @@
 - Python 侧可以直接输入 numpy 图像与四元数，调用真实 runtime step
 - 新增了 `python_tests/test_runtime_binding.py`
 - 当前 Python 测试已覆盖 CRC、EKF、Armor、Solver、Target、Tracker、Aimer、Runtime
+
+### 11. Python diagnose 控制面骨架
+
+- 新增了 `sp_vision_25_python.diagnose` 包
+- 新增了统一 CLI 入口 `sp-vision-diagnose`
+- 新增了 `status`、`bindings`、`camera`、`gimbal`、`auto-aim` 命令
+- 现有 Bash diagnose 脚本已被 Python 命令统一桥接
+- 将 Python 构建后端改为仓库内本地 backend，避免 `uv` 依赖外网拉取 build backend
+- 统一入口已经可以直接查看构建状态、绑定状态，并转发到现有 camera/gimbal/auto_aim 诊断脚本

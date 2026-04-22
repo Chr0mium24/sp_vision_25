@@ -94,12 +94,22 @@ IMU型号：使用C板内置BMI088作为IMU\
     uv sync
     ```
 
-4. 运行demo:
+4. Python diagnose 入口（可选）
+    现在已经有一个统一的 Python 控制面入口，用来先桥接现有 diagnose 脚本、后续逐步替换成纯 Python/TUI 流程。
+    ```bash
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose status
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose bindings
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera list
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal help
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim list
+    ```
+
+5. 运行demo:
     ```bash
     ./build/bin/tests/auto_aim/auto_aim_test
     ```
 
-5. 注册自启：
+6. 注册自启：
     1. 确保已安装`screen`:
         ```
         sudo apt install screen
@@ -122,7 +132,7 @@ IMU型号：使用C板内置BMI088作为IMU\
         chmod +x autostart.sh
         ```
 
-6. USB2CAN设置（可选）
+7. USB2CAN设置（可选）
     1. 创建`.rules`文件:
         ```
         sudo touch /etc/udev/rules.d/99-can-up.rules
@@ -132,7 +142,7 @@ IMU型号：使用C板内置BMI088作为IMU\
         ACTION=="add", KERNEL=="can0", RUN+="/sbin/ip link set can0 up type can bitrate 1000000"
         ACTION=="add", KERNEL=="can1", RUN+="/sbin/ip link set can1 up type can bitrate 1000000"
 
-7. 使用GPU推理（可选）
+8. 使用GPU推理（可选）
     ```
     mkdir neo  
     cd neo  
@@ -151,7 +161,7 @@ IMU型号：使用C板内置BMI088作为IMU\
     ```
     注：如果使用 GPU 异步推理（async-infer），最高显示分辨率限制为 1920×1080 (24Hz)
 
-8. 串口设置
+9. 串口设置
     1. 授予权限
         ```
         sudo usermod -a -G dialout $USER
