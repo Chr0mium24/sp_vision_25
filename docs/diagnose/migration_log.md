@@ -175,6 +175,6 @@
 
 ### 24. gimbal 二进制清单收口
 
-- `gimbal list` 现在只展示仍然保留的 C++ 后端：`gimbal_link_diag_test` 和 `gimbal_serial_probe`
+- `gimbal list` 现在只展示 Python 诊断命令，gimbal 的 C++ 后端已全部清空
 - `gimbal_axis_diag_test`、`gimbal_manual_axis_diag_test`、`gimbal_ui_test` 都已经从清单和构建中移除
-- 这一步把 gimbal 的 Python / C++ 边界进一步收紧，后续只剩 link/probe 两条更底层的诊断链路还需要继续迁移
+- 这一步把 gimbal 的 Python / C++ 边界彻底收紧，gimbal 诊断链路已经没有残留的 C++ 后端

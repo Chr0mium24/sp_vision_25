@@ -8,7 +8,7 @@ from rich.table import Table
 
 from .actions import handle_auto_aim_action, handle_camera_action, handle_gimbal_action
 from .bindings import binding_status
-from .inventory import print_binary_status
+from .inventory import print_binary_status, print_gimbal_status
 from .system import print_camera_info, print_gimbal_port_info
 from .paths import build_dir, build_python_dir, repo_root
 from .tui import launch_tui
@@ -270,7 +270,7 @@ def gimbal_help() -> None:
 
 @gimbal_app.command("list")
 def gimbal_list() -> None:
-    print_binary_status("gimbal")
+    print_gimbal_status()
 
 
 @_extra_command(gimbal_app, "quick")

@@ -6,8 +6,8 @@ import os
 import sys
 import termios
 import time
-from itertools import permutations, product
 from dataclasses import dataclass
+from itertools import product
 from pathlib import Path
 from typing import Any
 

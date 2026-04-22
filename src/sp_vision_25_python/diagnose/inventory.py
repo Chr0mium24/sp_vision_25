@@ -27,11 +27,7 @@ def _camera_specs() -> tuple[BinarySpec, ...]:
 
 
 def _gimbal_specs() -> tuple[BinarySpec, ...]:
-    base = build_dir() / "bin" / "diag" / "gimbal"
-    return (
-        BinarySpec("gimbal_link_diag_test", base / "gimbal_link_diag_test"),
-        BinarySpec("gimbal_serial_probe", base / "gimbal_serial_probe"),
-    )
+    return ()
 
 
 def _auto_aim_specs() -> tuple[BinarySpec, ...]:
@@ -71,6 +67,29 @@ def print_binary_status(domain: str) -> None:
     for spec in binary_specs(domain):
         status = "ok" if spec.path.is_file() and os_access(spec.path) else "missing"
         print(f"[{status}] {spec.path}")
+
+
+def print_gimbal_status() -> None:
+    print("[python] sp-vision-diagnose gimbal quick")
+    print("[python] sp-vision-diagnose gimbal rxonly")
+    print("[python] sp-vision-diagnose gimbal proto")
+    print("[python] sp-vision-diagnose gimbal probe")
+    print("[python] sp-vision-diagnose gimbal probe-raw")
+    print("[python] sp-vision-diagnose gimbal scan")
+    print("[python] sp-vision-diagnose gimbal snapshot")
+    print("[python] sp-vision-diagnose gimbal watch")
+    print("[python] sp-vision-diagnose gimbal control")
+    print("[python] sp-vision-diagnose gimbal script-control")
+    print("[python] sp-vision-diagnose gimbal axis")
+    print("[python] sp-vision-diagnose gimbal manual-axis")
+    specs = _gimbal_specs()
+    if specs:
+        print("[legacy]")
+        for spec in specs:
+            status = "ok" if spec.path.is_file() and os_access(spec.path) else "missing"
+            print(f"[{status}] {spec.path}")
+    else:
+        print("[legacy] none")
 
 
 def os_access(path: Path) -> bool:

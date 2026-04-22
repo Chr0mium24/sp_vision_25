@@ -4,30 +4,18 @@
 
 当前结论先写在前面：
 
-- 这些文件**现在还不能直接删除**
-- 它们大多仍然是 `sp-vision-diagnose` 的后端执行体
-- 只有当对应的 Python 命令和 `pybind11` 会话能力完全替代后，才可以删源码、删 CMake 目标、删文档引用
+- `gimbal` 相关诊断程序已经全部迁到 Python / `pybind11`
+- 当前这份路线图只剩 `auto_aim` 相关 C++ 诊断程序待处理
+- 这些文件在对应的 Python 命令和 `pybind11` 会话能力完全替代前，仍然不能直接删除
 
 ## 1. 现存文件清单
 
-- `diagnostics/gimbal/gimbal_link_diag_test.cpp`
-- `diagnostics/gimbal/gimbal_serial_probe.cpp`
 - `diagnostics/auto_aim/auto_aim_ui_test.cpp`
 - `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
 
 ## 2. 当前职责定位
 
-### 2.1 Gimbal 诊断组
-
-这些程序当前仍承担：
-
-- 串口连通性检查
-- 原始帧统计
-- 云台姿态读取
-- 控制模式交互
-- 脚本化控制
-
-### 2.2 Auto Aim 诊断组
+### 2.1 Auto Aim 诊断组
 
 这些程序当前仍承担：
 
@@ -53,50 +41,7 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 ## 4. 文件级路线图
 
-### 4.1 `diagnostics/gimbal/gimbal_ui_test.cpp`
-
-当前状态：
-
-- 已由 Python 侧的 `GimbalSession` + `pybind11` 绑定接管
-- `sp-vision-diagnose gimbal snapshot/watch/control/script-control` 现在走 Python
-- 源文件和 CMake 目标已删除
-
-后续建议：
-
-- 继续把 `quick/rxonly/proto/probe/scan` 逐步转到 Python
-
-### 4.2 `diagnostics/gimbal/gimbal_link_diag_test.cpp`
-
-当前问题：
-
-- 负责串口多端口扫描、原始帧统计、协议有效性判断
-
-替代方向：
-
-- Python 侧实现端口枚举和探测流程
-- 核心串口收发仍然复用 `io::Gimbal`
-
-删除条件：
-
-- `sp-vision-diagnose gimbal quick/rxonly/proto/scan` 能完整替代
-- Python 侧能够直接给出等价的统计/判定结果
-
-### 4.3 `diagnostics/gimbal/gimbal_serial_probe.cpp`
-
-当前问题：
-
-- 偏底层字节流探测
-
-替代方向：
-
-- Python 探测层直接读取串口统计与原始帧样本
-- 保留 `io::Gimbal` 作为真实通信后端
-
-删除条件：
-
-- `sp-vision-diagnose gimbal probe/probe-raw` 完全替代
-
-### 4.4 `diagnostics/auto_aim/auto_aim_ui_test.cpp`
+### 4.1 `diagnostics/auto_aim/auto_aim_ui_test.cpp`
 
 当前问题：
 
@@ -112,7 +57,7 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 - `sp-vision-diagnose auto-aim armor-box/armor-intent/armor-rec/armor-offline/rune-box/rune-rec/rune-online/rune-online-mpc` 已完全由 Python + `pybind11` 接管
 
-### 4.5 `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
+### 4.2 `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
 
 当前问题：
 
@@ -132,19 +77,7 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 ## 5. 建议的替换顺序
 
-### 阶段 A：先替 gimbal
-
-优先完成：
-
-- `io::Gimbal` 的 Python 绑定
-- `GimbalDiagnoseSession`
-- `sp-vision-diagnose gimbal` 的 Python 实现
-
-目标：
-
-- 先让 gimbal 相关的 5 个诊断 cpp 失去独立必要性
-
-### 阶段 B：再替 auto_aim
+### 阶段 A：先替 auto_aim
 
 优先完成：
 
@@ -156,7 +89,7 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 - 让 `auto_aim_ui_test.cpp` 和 `auto_aim_ui_tune.cpp` 退出主路径
 
-### 阶段 C：最后删源码
+### 阶段 B：最后删源码
 
 当满足以下三个条件时，才可以删：
 

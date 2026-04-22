@@ -26,24 +26,18 @@ def test_camera_quick_uses_config_flag(monkeypatch):
 def test_gimbal_scan_uses_detected_ports(monkeypatch):
     recorded = []
 
-    def fake_run(path, args):
-        recorded.append((path, args))
-        return 0
-
-    monkeypatch.setattr(actions, "run_executable", fake_run)
+    monkeypatch.setattr(
+        actions,
+        "run_gimbal_link_diag",
+        lambda config, args: recorded.append((config, args)) or 0,
+    )
     monkeypatch.setattr(actions, "gimbal_scan_ports", lambda: ["/dev/ttyUSB0", "/dev/ttyUSB1"])
     result = actions.handle_gimbal_action("scan", Path("configs/demo.yaml"), ["--loop-ms=50"])
     assert result == 0
     assert recorded == [
         (
-            actions.binary_path("gimbal", "gimbal_link_diag_test"),
-            [
-                "configs/demo.yaml",
-                "--ports=/dev/ttyUSB0,/dev/ttyUSB1",
-                "--duration-ms=3000",
-                "--summary-ms=1000",
-                "--loop-ms=50",
-            ],
+            Path("configs/demo.yaml"),
+            ["--ports=/dev/ttyUSB0,/dev/ttyUSB1", "--duration-ms=3000", "--summary-ms=1000", "--loop-ms=50"],
         )
     ]
 

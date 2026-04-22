@@ -734,33 +734,19 @@ config/
 
 ### 8.5 Diagnose 程序本身
 
-#### [diagnostics/gimbal/gimbal_ui_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/gimbal/gimbal_ui_test.cpp)
+#### 已删除的 gimbal 诊断文件
 
-当前状态：
+- `diagnostics/gimbal/gimbal_ui_test.cpp`
+- `diagnostics/gimbal/gimbal_axis_diag_test.cpp`
+- `diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp`
 
-- 已迁移到 Python 侧的 `GimbalSession`
-- `sp-vision-diagnose gimbal snapshot/watch/control/script-control` 现在直接走 `pybind11`
-- 对应 C++ 源文件和 CMake 目标已删除
+这些文件的功能已经迁移到 Python 侧：
 
-建议后续：
+- `sp-vision-diagnose gimbal snapshot/watch/control/script-control`
+- `sp-vision-diagnose gimbal axis`
+- `sp-vision-diagnose gimbal manual-axis`
 
-- 继续收口 `gimbal_link_diag_test.cpp`、`gimbal_serial_probe.cpp`
-
-#### [diagnostics/gimbal/gimbal_axis_diag_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/gimbal/gimbal_axis_diag_test.cpp)
-
-当前状态：
-
-- 已迁移到 Python 侧的 `GimbalSession`
-- `sp-vision-diagnose gimbal axis` 现在直接走 Python
-- 对应 C++ 源文件和 CMake 目标已删除
-
-#### [diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/gimbal/gimbal_manual_axis_diag_test.cpp)
-
-当前状态：
-
-- 已迁移到 Python 侧的 `GimbalSession`
-- `sp-vision-diagnose gimbal manual-axis` 现在直接走 Python
-- 对应 C++ 源文件和 CMake 目标已删除
+`gimbal_link_diag_test.cpp` 和 `gimbal_serial_probe.cpp` 也已经迁到 Python，gimbal 这条链路现在只保留 `pybind11` 后端和 Python diagnose 控制面。
 
 #### [diagnostics/auto_aim/auto_aim_ui_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/auto_aim/auto_aim_ui_test.cpp)
 

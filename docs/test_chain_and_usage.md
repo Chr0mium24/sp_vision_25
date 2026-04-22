@@ -36,10 +36,9 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 
 主程序：
 
-- `gimbal_link_diag_test`（非英雄协议快速诊断：可选发包+持续统计收包）
 - `gimbal_test`（基础连通性与发射节奏）
 - `gimbal_response_test`（响应分析）
-- `sp-vision-diagnose gimbal snapshot/watch/control/script-control`（Python 会话入口，推荐）
+- `sp-vision-diagnose gimbal quick/rxonly/proto/probe/probe-raw/scan/snapshot/watch/control/script-control/axis/manual-axis`（Python 会话入口，推荐）
 
 调用示例：
 
@@ -50,10 +49,10 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal rxonly
 UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal proto
 
 # 非英雄协议快速诊断：先看串口是否有字节、是否有有效帧（推荐先跑）
-./build/bin/diag/gimbal/gimbal_link_diag_test configs/standard3.yaml --duration-ms=3000 --summary-ms=1000
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal quick configs/standard3.yaml
 
 # 仅收包诊断（不发控制）
-./build/bin/diag/gimbal/gimbal_link_diag_test configs/standard3.yaml --no-send --duration-ms=3000 --summary-ms=1000
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal rxonly configs/standard3.yaml
 
 # 快照：直接读取一帧云台状态
 UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal snapshot configs/standard3.yaml
@@ -154,7 +153,7 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.y
 - 联调诊断（`build/bin/diag`）：
 - `auto_aim`: `auto_aim_ui_test`, `auto_aim_ui_tune`
 - `auto_buff`: `auto_buff_debug`, `auto_buff_debug_mpc`
-- `gimbal`: `gimbal_link_diag_test`, `gimbal_serial_probe`
+- `gimbal`: Python diagnose commands only
 
 ## 4. 常见问题
 

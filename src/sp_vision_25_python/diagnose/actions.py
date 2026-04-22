@@ -16,6 +16,7 @@ from .gimbal_session import (
     run_gimbal_snapshot,
     run_gimbal_watch,
 )
+from .gimbal_link_probe import run_gimbal_link_diag, run_gimbal_serial_probe
 from .runner import run_executable
 from .paths import repo_root
 from .system import command_exists, default_config_path, gimbal_scan_ports, run_and_capture, run_silently
@@ -394,35 +395,23 @@ def handle_gimbal_action(action: str, config: Path | None, extra_args: list[str]
         print(GIMBAL_HELP)
         return 0
     if action == "quick":
-        return run_executable(
-            binary_path("gimbal", "gimbal_link_diag_test"),
-            [str(cfg), "--duration-ms=3000", "--summary-ms=1000", *extra_args],
-        )
+        return run_gimbal_link_diag(cfg, ["--duration-ms=3000", "--summary-ms=1000", *extra_args])
     if action == "rxonly":
-        return run_executable(
-            binary_path("gimbal", "gimbal_link_diag_test"),
-            [str(cfg), "--no-send", "--duration-ms=3000", "--summary-ms=1000", *extra_args],
-        )
+        return run_gimbal_link_diag(cfg, ["--no-send", "--duration-ms=3000", "--summary-ms=1000", *extra_args])
     if action == "proto":
-        return run_executable(
-            binary_path("gimbal", "gimbal_link_diag_test"),
-            [str(cfg), "--no-send", "--require-rx", "--duration-ms=2200", "--summary-ms=1000", *extra_args],
+        return run_gimbal_link_diag(
+            cfg, ["--no-send", "--require-rx", "--duration-ms=2200", "--summary-ms=1000", *extra_args]
         )
     if action == "probe":
-        return run_executable(
-            binary_path("gimbal", "gimbal_serial_probe"),
-            [str(cfg), "--duration-ms=3000", "--summary-ms=1000", *extra_args],
-        )
+        return run_gimbal_serial_probe(cfg, ["--duration-ms=3000", "--summary-ms=1000", *extra_args])
     if action == "probe-raw":
-        return run_executable(
-            binary_path("gimbal", "gimbal_serial_probe"),
-            [str(cfg), "--duration-ms=1200", "--summary-ms=1200", "--raw-log", "--hex-len=32", *extra_args],
+        return run_gimbal_serial_probe(
+            cfg, ["--duration-ms=1200", "--summary-ms=1200", "--raw-log", "--hex-len=32", *extra_args]
         )
     if action == "scan":
         ports = ",".join(gimbal_scan_ports())
-        return run_executable(
-            binary_path("gimbal", "gimbal_link_diag_test"),
-            [str(cfg), f"--ports={ports}", "--duration-ms=3000", "--summary-ms=1000", *extra_args],
+        return run_gimbal_link_diag(
+            cfg, [f"--ports={ports}", "--duration-ms=3000", "--summary-ms=1000", *extra_args]
         )
     if action == "snapshot":
         return run_gimbal_snapshot(cfg, extra_args)

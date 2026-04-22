@@ -30,7 +30,8 @@ def test_camera_list_is_handled_in_python():
 def test_gimbal_list_is_handled_in_python():
     result = runner.invoke(app, ["gimbal", "list"])
     assert result.exit_code == 0
-    assert "gimbal_link_diag_test" in result.stdout
+    assert "sp-vision-diagnose gimbal quick" in result.stdout
+    assert "[legacy] none" in result.stdout
 
 
 def test_auto_aim_list_is_handled_in_python():
@@ -105,14 +106,65 @@ def test_camera_tune_is_handled_in_python(monkeypatch):
 def test_gimbal_quick_is_handled_in_python(monkeypatch):
     called = []
 
-    def fake_handle(action, config, extra_args):
-        called.append((action, config, extra_args))
-        return 0
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
 
-    monkeypatch.setattr(main, "handle_gimbal_action", fake_handle)
+    monkeypatch.setattr(
+        actions, "run_gimbal_link_diag", lambda config, extra_args: called.append((config, extra_args)) or 0
+    )
     result = runner.invoke(app, ["gimbal", "quick"])
     assert result.exit_code == 0
-    assert called == [("quick", None, [])]
+    assert called == [(default_config_path(), ["--duration-ms=3000", "--summary-ms=1000"])]
+
+
+def test_gimbal_rxonly_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions, "run_gimbal_link_diag", lambda config, extra_args: called.append((config, extra_args)) or 0
+    )
+    result = runner.invoke(app, ["gimbal", "rxonly"])
+    assert result.exit_code == 0
+    assert called == [
+        (default_config_path(), ["--no-send", "--duration-ms=3000", "--summary-ms=1000"])
+    ]
+
+
+def test_gimbal_proto_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions, "run_gimbal_link_diag", lambda config, extra_args: called.append((config, extra_args)) or 0
+    )
+    result = runner.invoke(app, ["gimbal", "proto"])
+    assert result.exit_code == 0
+    assert called == [
+        (
+            default_config_path(),
+            ["--no-send", "--require-rx", "--duration-ms=2200", "--summary-ms=1000"],
+        )
+    ]
+
+
+def test_gimbal_scan_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(actions, "gimbal_scan_ports", lambda: ["/dev/ttyUSB9"])
+    monkeypatch.setattr(
+        actions, "run_gimbal_link_diag", lambda config, extra_args: called.append((config, extra_args)) or 0
+    )
+    result = runner.invoke(app, ["gimbal", "scan"])
+    assert result.exit_code == 0
+    assert called == [(default_config_path(), ["--ports=/dev/ttyUSB9", "--duration-ms=3000", "--summary-ms=1000"])]
 
 
 def test_gimbal_axis_is_handled_in_python(monkeypatch):
@@ -143,6 +195,40 @@ def test_gimbal_manual_axis_is_handled_in_python(monkeypatch):
     result = runner.invoke(app, ["gimbal", "manual-axis", "--wait-valid-ms=1000"])
     assert result.exit_code == 0
     assert called == [(default_config_path(), ["--wait-valid-ms=1000"])]
+
+
+def test_gimbal_probe_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions,
+        "run_gimbal_serial_probe",
+        lambda config, extra_args: called.append((config, extra_args)) or 0,
+    )
+    result = runner.invoke(app, ["gimbal", "probe"])
+    assert result.exit_code == 0
+    assert called == [(default_config_path(), ["--duration-ms=3000", "--summary-ms=1000"])]
+
+
+def test_gimbal_probe_raw_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions,
+        "run_gimbal_serial_probe",
+        lambda config, extra_args: called.append((config, extra_args)) or 0,
+    )
+    result = runner.invoke(app, ["gimbal", "probe-raw"])
+    assert result.exit_code == 0
+    assert called == [
+        (default_config_path(), ["--duration-ms=1200", "--summary-ms=1200", "--raw-log", "--hex-len=32"])
+    ]
 
 
 def test_gimbal_snapshot_is_handled_in_python(monkeypatch):
