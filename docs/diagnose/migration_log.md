@@ -133,3 +133,9 @@
 - 修正了 `camera quick`、`camera release`、`camera tune`、`auto-aim armor-box`、`auto-aim rune-tune` 等命令的参数分流
 - 强制重装了本地 `uv` 环境里的 `sp-vision-25-python`，确保运行时加载到的是最新源码
 - 这一轮之后，`uv run pytest` 和典型 diagnose 命令都恢复为稳定可用状态
+
+### 19. UV editable 链路修正
+
+- 将本地 `build_backend.py` 的 editable 构建改成源码链接式安装
+- 现在 `uv run` 直接读取 `src/` 下的 Python 代码，不再依赖旧 wheel 拷贝
+- 这能显著减少“改了源码但运行结果还是旧代码”的错觉和额外重装次数

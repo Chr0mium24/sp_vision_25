@@ -87,6 +87,7 @@ IMU型号：使用C板内置BMI088作为IMU\
     uv sync
     uv run pytest
     ```
+    现在 Python 包是以 editable 方式安装的，`src/` 下的 Python 改动会直接反映到 `uv run`；通常不需要反复重装。
     如需切换 Python 版本：
     ```bash
     uv python install 3.12
