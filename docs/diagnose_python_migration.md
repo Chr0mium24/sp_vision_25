@@ -32,7 +32,7 @@
 - `diagnostics/camera/diagnose.sh`：历史上集成设备释放、信息查看、配置编辑、命令分发
 - `diagnostics/auto_aim/diagnose.sh`：历史上集成在线/离线调试、rune 调参、YAML 原位修改
 - `diagnostics/gimbal/diagnose.sh`：历史上集成串口诊断、控制模式切换、端口信息查看
-- `diagnostics/auto_aim/auto_aim_ui_tune.cpp`：既负责 runtime，又负责 TUI，又负责 YAML 回写
+- `diagnostics/auto_aim/auto_aim_ui_tune.cpp`：历史上的过渡实现，已由 Python tuner 替代并删除
 - `io/camera.cpp`、`io/cboard.cpp`、`tasks/auto_aim/detector.cpp`、`tasks/auto_aim/planner/planner.cpp` 等：构造时直接从 `config_path` 读取 YAML
 
 这会导致三个长期问题：
@@ -760,7 +760,7 @@ config/
 
 Python 侧现在直接通过 `pybind11` 绑定的 `Camera`、`CBoard`、`Runtime` 驱动实时闭环，旧 C++ UI 文件已经不再需要。
 
-#### [diagnostics/auto_aim/auto_aim_ui_tune.cpp](/home/cr/Codes/sp_vision_25/diagnostics/auto_aim/auto_aim_ui_tune.cpp)
+#### `diagnostics/auto_aim/auto_aim_ui_tune.cpp`（历史文件，已删除）
 
 当前问题：
 
@@ -769,7 +769,7 @@ Python 侧现在直接通过 `pybind11` 绑定的 `Camera`、`CBoard`、`Runtime
 
 建议修改：
 
-- 停止继续扩展该文件
+- 停止继续扩展该文件（此项已完成）
 - 迁移目标：
   - 运行时 patch 交给 C++ runtime 接口
   - YAML 读写交给 Python
@@ -942,7 +942,7 @@ Python 改 YAML
 6. 为 `Planner` 新增 `PlannerConfig` 与 `update_runtime_config`
 7. 绑定 `Planner`
 8. 为 `AutoAimRuntime` 增加 `snapshot()` 接口
-9. 将 `auto_aim_ui_tune.cpp` 标记为过渡实现，不再扩展
+9. `auto_aim_ui_tune.cpp` 已迁移并删除，后续不再作为主路径讨论
 
 这批改动完成后：
 

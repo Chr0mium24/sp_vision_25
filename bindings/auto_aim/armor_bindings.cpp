@@ -106,6 +106,8 @@ void bind_armor(py::module_ & m)
     .def_readwrite("left", &auto_aim::Armor::left)
     .def_readwrite("right", &auto_aim::Armor::right)
     .def_property_readonly("center", [](const auto_aim::Armor & self) { return point_to_tuple(self.center); })
+    .def_property_readonly(
+      "center_norm", [](const auto_aim::Armor & self) { return point_to_tuple(self.center_norm); })
     .def_property_readonly("points", [](const auto_aim::Armor & self) { return points_to_list(self.points); })
     .def_property_readonly("box", [](const auto_aim::Armor & self) { return rect_to_tuple(self.box); })
     .def_readwrite("ratio", &auto_aim::Armor::ratio)

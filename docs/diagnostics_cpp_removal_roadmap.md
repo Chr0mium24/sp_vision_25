@@ -5,26 +5,10 @@
 当前结论先写在前面：
 
 - `gimbal` 相关诊断程序已经全部迁到 Python / `pybind11`
-- 当前这份路线图只剩 `auto_aim` 相关 C++ 诊断程序待处理
-- 这些文件在对应的 Python 命令和 `pybind11` 会话能力完全替代前，仍然不能直接删除
+- `auto_aim_ui_tune.cpp` 也已经迁移并删除
+- 这份路线图当前仅保留为历史记录，真正需要删的 `diagnostics/*.cpp` 诊断程序已经清空
 
-## 1. 现存文件清单
-
-- `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
-
-## 2. 当前职责定位
-
-### 2.1 Auto Aim 诊断组
-
-这些程序当前仍承担：
-
-- 装甲板在线画框
-- 装甲板在线调参与快照
-- Power Rune 离线回放
-- Power Rune 调参
-- 运行时参数导出
-
-## 3. 迁移总原则
+## 1. 迁移总原则
 
 Python 不重写核心行为，只做控制面、界面和编排。
 
@@ -38,48 +22,15 @@ Python 不重写核心行为，只做控制面、界面和编排。
 - 在 Python 里手写一份不同逻辑的“仿真版诊断”
 - 在 C++ 和 Python 之间保留两套不一致的业务实现
 
-## 4. 文件级路线图
+## 2. 最终收口条件
 
-### 4.1 `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
-
-当前问题：
-
-- C++ 中直接加载/修改/导出 YAML
-- 运行时调参与持久化写回耦合
-
-替代方向：
-
-- 运行时 patch 交给 C++ runtime/session 接口
-- YAML 读写和落盘交给 Python
-- 这个文件应当停止扩展，并逐步缩成兼容层
-
-删除条件：
-
-- Python 版 `auto-aim tune` / `rune-tune` 完整接管
-- Python 能直接从 runtime snapshot 生成可保存 patch
-
-## 5. 建议的替换顺序
-
-### 阶段 A：先替 auto_aim
-
-优先完成：
-
-- runtime snapshot 绑定
-- Python 版 `armor-box` / `armor-tune` / `rune-tune`
-
-目标：
-
-- 让 `auto_aim_ui_tune.cpp` 退出主路径
-
-### 阶段 B：最后删源码
-
-当满足以下三个条件时，才可以删：
+当满足以下三个条件时，才可以删任何仍在服役的诊断 C++ 文件：
 
 1. `CMakeLists.txt` 不再 `add_executable(...)` 它们
 2. `src/sp_vision_25_python/diagnose/actions.py` 不再调用对应二进制
 3. 文档和测试不再引用这些可执行文件
 
-## 6. 删除前检查清单
+## 3. 删除前检查清单
 
 每删一个文件前，建议确认：
 

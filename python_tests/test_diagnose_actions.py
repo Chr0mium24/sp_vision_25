@@ -78,6 +78,19 @@ def test_auto_aim_armor_box_keeps_show(monkeypatch):
     ]
 
 
+def test_auto_aim_armor_tune_uses_python(monkeypatch):
+    recorded = []
+
+    monkeypatch.setattr(
+        actions,
+        "run_auto_aim_tune",
+        lambda config, extra_args: recorded.append((config, extra_args)) or 0,
+    )
+    result = actions.handle_auto_aim_action("armor-tune", Path("configs/demo.yaml"), ["--show=false"])
+    assert result == 0
+    assert recorded == [(Path("configs/demo.yaml"), ["--show=false"])]
+
+
 def test_auto_aim_rune_box_uses_default_input(monkeypatch):
     recorded = []
 

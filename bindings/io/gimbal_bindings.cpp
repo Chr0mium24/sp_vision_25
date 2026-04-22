@@ -95,6 +95,15 @@ void bind_gimbal(py::module_ & m)
     .def("rx_stats", &io::Gimbal::rx_stats)
     .def("has_valid_q", &io::Gimbal::has_valid_q)
     .def("mode_name", &io::Gimbal::str, py::arg("mode"))
+    .def(
+      "q_at_ns",
+      [](io::Gimbal & self, int64_t timestamp_ns) {
+        auto timestamp = std::chrono::steady_clock::time_point(
+          std::chrono::steady_clock::duration(timestamp_ns));
+        const auto q = self.q(timestamp);
+        return py::make_tuple(q.w(), q.x(), q.y(), q.z());
+      },
+      py::arg("timestamp_ns"))
     .def("ypr_now", &ypr_now)
     .def(
       "send",

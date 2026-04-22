@@ -7,6 +7,7 @@ import sys
 import termios
 import time
 from dataclasses import dataclass
+from enum import Enum
 from itertools import product
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,21 @@ import numpy as np
 
 RAD2DEG = 57.29577951308232
 DEG2RAD = 1.0 / RAD2DEG
+
+
+class Key(str, Enum):
+    Quit = "quit"
+    Left = "left"
+    Right = "right"
+    Up = "up"
+    Down = "down"
+    Char = "char"
+
+
+@dataclass(frozen=True)
+class KeyEvent:
+    key: Key
+    ch: int | None
 
 
 def _load_bindings() -> Any:
@@ -351,29 +367,37 @@ def run_gimbal_watch(config_path: Path, extra_args: list[str]) -> int:
     return 0
 
 
-def _read_key() -> tuple[str | None, int | None]:
+def read_key() -> KeyEvent | None:
     try:
         data = os.read(sys.stdin.fileno(), 1)
     except BlockingIOError:
-        return None, None
+        return None
     except OSError:
-        return None, None
+        return None
     if not data:
-        return None, None
+        return None
 
     ch = data[0]
     if ch == ord("q"):
-        return "quit", ch
+        return KeyEvent(Key.Quit, ch)
     if ch == 27:
         try:
             seq = os.read(sys.stdin.fileno(), 2)
         except OSError:
-            return None, None
+            return None
         if len(seq) < 2 or seq[0] != ord("["):
-            return None, None
-        mapping = {ord("A"): "up", ord("B"): "down", ord("C"): "right", ord("D"): "left"}
-        return mapping.get(seq[1]), seq[1]
-    return "char", ch
+            return None
+        mapping = {
+            ord("A"): Key.Up,
+            ord("B"): Key.Down,
+            ord("C"): Key.Right,
+            ord("D"): Key.Left,
+        }
+        key = mapping.get(seq[1])
+        if key is None:
+            return None
+        return KeyEvent(key, seq[1])
+    return KeyEvent(Key.Char, ch)
 
 
 def _run_gimbal_control_loop(config_path: Path, extra_args: list[str], scripted: bool) -> int:
@@ -418,44 +442,46 @@ def _run_gimbal_control_loop(config_path: Path, extra_args: list[str], scripted:
             if deadline is not None and now >= deadline:
                 break
 
-            key, ch = (None, None)
+            event = None
             if not options["no_input"]:
-                key, ch = _read_key()
+                event = read_key()
 
-            if key == "quit":
+            if event is None:
+                pass
+            elif event.key == Key.Quit:
                 break
-            if key == "up" or (key == "char" and ch in {ord("w"), ord("W")}):
+            elif event.key == Key.Up or (event.key == Key.Char and event.ch in {ord("w"), ord("W")}):
                 pitch_deg += step_deg
-            elif key == "down" or (key == "char" and ch in {ord("s"), ord("S")}):
+            elif event.key == Key.Down or (event.key == Key.Char and event.ch in {ord("s"), ord("S")}):
                 pitch_deg -= step_deg
-            elif key == "left" or (key == "char" and ch in {ord("a"), ord("A")}):
+            elif event.key == Key.Left or (event.key == Key.Char and event.ch in {ord("a"), ord("A")}):
                 yaw_deg -= step_deg
-            elif key == "right" or (key == "char" and ch in {ord("d"), ord("D")}):
+            elif event.key == Key.Right or (event.key == Key.Char and event.ch in {ord("d"), ord("D")}):
                 yaw_deg += step_deg
-            elif key == "char" and ch == ord("["):
+            elif event.key == Key.Char and event.ch == ord("["):
                 step_deg = max(0.1, step_deg / 2.0)
-            elif key == "char" and ch == ord("]"):
+            elif event.key == Key.Char and event.ch == ord("]"):
                 step_deg = min(20.0, step_deg * 2.0)
-            elif key == "char" and ch == ord("0"):
+            elif event.key == Key.Char and event.ch == ord("0"):
                 yaw_deg = 0.0
                 pitch_deg = 0.0
-            elif key == "char" and ch in {ord("c"), ord("C")}:
+            elif event.key == Key.Char and event.ch in {ord("c"), ord("C")}:
                 tracking = not tracking
-            elif key == "char" and ch in {ord("r"), ord("R")}:
+            elif event.key == Key.Char and event.ch in {ord("r"), ord("R")}:
                 fric_on = not fric_on
-            elif key == "char" and ch == ord("1"):
+            elif event.key == Key.Char and event.ch == ord("1"):
                 fire_mode = 0
-            elif key == "char" and ch == ord("2"):
+            elif event.key == Key.Char and event.ch == ord("2"):
                 fire_mode = 1
-            elif key == "char" and ch == ord("3"):
+            elif event.key == Key.Char and event.ch == ord("3"):
                 fire_mode = 2
                 fire_pulse = True
                 fire_pulse_until = now + 0.2
-            elif key == "char" and ch == ord("4"):
+            elif event.key == Key.Char and event.ch == ord("4"):
                 fire_mode = 3
-            elif key == "char" and ch in {ord("f"), ord("F")}:
+            elif event.key == Key.Char and event.ch in {ord("f"), ord("F")}:
                 fire_mode = 3 if fire_mode == 0 else 0
-            elif key == "char" and ch == ord(" "):
+            elif event.key == Key.Char and event.ch == ord(" "):
                 fire_pulse = True
                 fire_pulse_until = now + 0.2
 

@@ -41,7 +41,8 @@ def test_auto_aim_list_is_handled_in_python():
     result = runner.invoke(app, ["auto-aim", "list"])
     assert result.exit_code == 0
     assert "sp-vision-diagnose auto-aim armor-box" in result.stdout
-    assert "auto_aim_ui_tune" in result.stdout
+    assert "auto_aim_ui_tune" not in result.stdout
+    assert "auto_aim_test" in result.stdout
 
 
 def test_camera_info_is_handled_in_python(monkeypatch):

@@ -36,7 +36,6 @@ def _auto_aim_specs() -> tuple[BinarySpec, ...]:
     test_aim_dir = build_dir() / "bin" / "tests" / "auto_aim"
     test_buff_dir = build_dir() / "bin" / "tests" / "auto_buff"
     return (
-        BinarySpec("auto_aim_ui_tune", diag_dir / "auto_aim_ui_tune"),
         BinarySpec("auto_aim_test", test_aim_dir / "auto_aim_test"),
         BinarySpec("detector_video_test", test_aim_dir / "detector_video_test"),
         BinarySpec("auto_power_rune_test", test_buff_dir / "auto_power_rune_test"),

@@ -61,8 +61,9 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-tune configs
 
 说明：
 
-- 当前 `armor-tune` 仍然通过过渡性的 C++ `auto_aim_ui_tune.cpp` 承担交互编辑，但 Python 入口已经接管命令路由和文档入口。
-- 后续若继续精简，会优先把 YAML 回写和交互面板再往 Python TUI 收口。
+- 当前 `armor-tune` 已由 Python tuner 接管交互编辑和 YAML 回写。
+- 相关的旧 C++ `auto_aim_ui_tune.cpp` 已删除。
+- 后续若继续精简，会优先把交互面板再往 Python TUI 收口。
 
 关键交互：
 

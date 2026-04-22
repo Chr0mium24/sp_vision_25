@@ -155,7 +155,7 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.y
 - `system`: `cboard_test`, `dm_test`
 - `ros2`（仅 ROS2 依赖满足时编译）：`publish_test`, `subscribe_test`, `topic_loop_test`
 - 联调诊断（`build/bin/diag`）：
-- `auto_aim`: `auto_aim_ui_tune`（过渡实现，后续会继续收口）
+- `auto_aim`: Python `armor-tune` 入口（旧 `auto_aim_ui_tune` 已删除）
 - `auto_buff`: `auto_buff_debug`, `auto_buff_debug_mpc`
 - `gimbal`: Python diagnose commands only
 

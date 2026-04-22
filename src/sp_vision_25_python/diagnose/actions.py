@@ -18,6 +18,7 @@ from .gimbal_session import (
 )
 from .gimbal_link_probe import run_gimbal_link_diag, run_gimbal_serial_probe
 from .auto_aim_live import run_auto_aim_live
+from .auto_aim_tune import run_auto_aim_tune
 from .runner import run_executable
 from .paths import repo_root
 from .system import command_exists, default_config_path, gimbal_scan_ports, run_and_capture, run_silently
@@ -465,10 +466,7 @@ def handle_auto_aim_action(action: str, config: Path | None, extra_args: list[st
             cfg, extra_args, show=_show_requested(extra_args, False), no_send=False, title="armor-rec"
         )
     if action == "armor-tune":
-        args = [str(cfg), *extra_args]
-        if not _has_show_arg(extra_args):
-            args.insert(1, "--show=true")
-        return run_executable(binary_path("auto_aim", "auto_aim_ui_tune"), args)
+        return run_auto_aim_tune(cfg, extra_args)
     if action == "armor-offline":
         input_prefix, remaining = _pop_input_arg(extra_args, "assets/demo/demo")
         return run_executable(
