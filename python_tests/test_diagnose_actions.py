@@ -44,36 +44,36 @@ def test_gimbal_scan_uses_detected_ports(monkeypatch):
 
 def test_auto_aim_armor_box_adds_show(monkeypatch):
     recorded = []
-
-    def fake_run(path, args):
-        recorded.append((path, args))
-        return 0
-
-    monkeypatch.setattr(actions, "run_executable", fake_run)
+    monkeypatch.setattr(
+        actions,
+        "run_auto_aim_live",
+        lambda config, args, **kwargs: recorded.append((config, args, kwargs)) or 0,
+    )
     result = actions.handle_auto_aim_action("armor-box", Path("configs/demo.yaml"), ["--scale=0.7"])
     assert result == 0
     assert recorded == [
         (
-            actions.binary_path("auto_aim", "auto_aim_ui_test"),
-            ["configs/demo.yaml", "--show=true", "--scale=0.7"],
+            Path("configs/demo.yaml"),
+            ["--scale=0.7"],
+            {"show": True, "no_send": False, "title": "armor-box"},
         )
     ]
 
 
 def test_auto_aim_armor_box_keeps_show(monkeypatch):
     recorded = []
-
-    def fake_run(path, args):
-        recorded.append((path, args))
-        return 0
-
-    monkeypatch.setattr(actions, "run_executable", fake_run)
+    monkeypatch.setattr(
+        actions,
+        "run_auto_aim_live",
+        lambda config, args, **kwargs: recorded.append((config, args, kwargs)) or 0,
+    )
     result = actions.handle_auto_aim_action("armor-box", Path("configs/demo.yaml"), ["--show=false"])
     assert result == 0
     assert recorded == [
         (
-            actions.binary_path("auto_aim", "auto_aim_ui_test"),
-            ["configs/demo.yaml", "--show=false"],
+            Path("configs/demo.yaml"),
+            ["--show=false"],
+            {"show": False, "no_send": False, "title": "armor-box"},
         )
     ]
 

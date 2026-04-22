@@ -36,7 +36,6 @@ def _auto_aim_specs() -> tuple[BinarySpec, ...]:
     test_aim_dir = build_dir() / "bin" / "tests" / "auto_aim"
     test_buff_dir = build_dir() / "bin" / "tests" / "auto_buff"
     return (
-        BinarySpec("auto_aim_ui_test", diag_dir / "auto_aim_ui_test"),
         BinarySpec("auto_aim_ui_tune", diag_dir / "auto_aim_ui_tune"),
         BinarySpec("auto_aim_test", test_aim_dir / "auto_aim_test"),
         BinarySpec("detector_video_test", test_aim_dir / "detector_video_test"),
@@ -83,6 +82,27 @@ def print_gimbal_status() -> None:
     print("[python] sp-vision-diagnose gimbal axis")
     print("[python] sp-vision-diagnose gimbal manual-axis")
     specs = _gimbal_specs()
+    if specs:
+        print("[legacy]")
+        for spec in specs:
+            status = "ok" if spec.path.is_file() and os_access(spec.path) else "missing"
+            print(f"[{status}] {spec.path}")
+    else:
+        print("[legacy] none")
+
+
+def print_auto_aim_status() -> None:
+    print("[python] sp-vision-diagnose auto-aim armor-box")
+    print("[python] sp-vision-diagnose auto-aim armor-intent")
+    print("[python] sp-vision-diagnose auto-aim armor-rec")
+    print("[python] sp-vision-diagnose auto-aim armor-tune")
+    print("[python] sp-vision-diagnose auto-aim armor-offline")
+    print("[python] sp-vision-diagnose auto-aim rune-box")
+    print("[python] sp-vision-diagnose auto-aim rune-rec")
+    print("[python] sp-vision-diagnose auto-aim rune-tune")
+    print("[python] sp-vision-diagnose auto-aim rune-online")
+    print("[python] sp-vision-diagnose auto-aim rune-online-mpc")
+    specs = _auto_aim_specs()
     if specs:
         print("[legacy]")
         for spec in specs:

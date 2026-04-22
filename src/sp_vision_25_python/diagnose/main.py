@@ -8,7 +8,7 @@ from rich.table import Table
 
 from .actions import handle_auto_aim_action, handle_camera_action, handle_gimbal_action
 from .bindings import binding_status
-from .inventory import print_binary_status, print_gimbal_status
+from .inventory import print_auto_aim_status, print_binary_status, print_gimbal_status
 from .system import print_camera_info, print_gimbal_port_info
 from .paths import build_dir, build_python_dir, repo_root
 from .tui import launch_tui
@@ -105,14 +105,18 @@ def bindings() -> None:
         for symbol in [
             "Armor",
             "Aimer",
+            "Camera",
+            "CBoard",
+            "Command",
             "Gimbal",
             "GimbalMode",
             "GimbalRxStats",
             "GimbalState",
-            "Command",
             "ExtendedKalmanFilter",
+            "Mode",
             "Runtime",
             "Solver",
+            "ShootMode",
             "Target",
             "Tracker",
             "VisionToGimbal",
@@ -403,7 +407,7 @@ def auto_aim_help() -> None:
 
 @auto_aim_app.command("list")
 def auto_aim_list() -> None:
-    print_binary_status("auto_aim")
+    print_auto_aim_status()
 
 
 @_extra_command(auto_aim_app, "armor-box")

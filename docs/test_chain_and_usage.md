@@ -25,7 +25,7 @@ build/bin/diag/<group>/<executable>
 
 ```bash
 build/bin/tests/auto_buff/auto_power_rune_test
-build/bin/diag/auto_aim/auto_aim_ui_test
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim list
 ```
 
 ## 2. 核心测试链路（推荐）
@@ -87,7 +87,7 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-rec configs/
 UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-box configs/standard3.yaml
 ```
 
-说明：`auto_aim_ui_test` 与 `standard` 均复用 `tasks/auto_aim/auto_aim_runtime.*`，联调链路与主链路核心计算保持一致。
+说明：Python 侧的 `armor-box` / `armor-intent` / `armor-rec` 直接复用 `tasks/auto_aim/auto_aim_runtime.*`，联调链路与主链路核心计算保持一致。
 
 ### 2.3 自瞄调参（在线 + 导出参数）
 
@@ -151,7 +151,7 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.y
 - `system`: `cboard_test`, `dm_test`
 - `ros2`（仅 ROS2 依赖满足时编译）：`publish_test`, `subscribe_test`, `topic_loop_test`
 - 联调诊断（`build/bin/diag`）：
-- `auto_aim`: `auto_aim_ui_test`, `auto_aim_ui_tune`
+- `auto_aim`: `auto_aim_ui_tune`
 - `auto_buff`: `auto_buff_debug`, `auto_buff_debug_mpc`
 - `gimbal`: Python diagnose commands only
 
@@ -169,7 +169,6 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.y
 - 只编译单个测试：
 
 ```bash
-cmake --build build -j"$(nproc)" --target auto_aim_ui_test
 cmake --build build -j"$(nproc)" --target auto_aim_ui_tune
 cmake --build build -j"$(nproc)" --target auto_power_rune_test
 ```

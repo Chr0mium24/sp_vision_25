@@ -748,20 +748,17 @@ config/
 
 `gimbal_link_diag_test.cpp` 和 `gimbal_serial_probe.cpp` 也已经迁到 Python，gimbal 这条链路现在只保留 `pybind11` 后端和 Python diagnose 控制面。
 
-#### [diagnostics/auto_aim/auto_aim_ui_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/auto_aim/auto_aim_ui_test.cpp)
+#### 已删除的 auto_aim 诊断文件
 
-当前问题：
+- `diagnostics/auto_aim/auto_aim_ui_test.cpp`
 
-- 既有 UI，又有 snapshot 生成，又有 runtime 驱动
+这些文件对应的在线识别、快照和 runtime 驱动入口已经迁移到 Python 侧：
 
-建议修改：
+- `sp-vision-diagnose auto-aim armor-box`
+- `sp-vision-diagnose auto-aim armor-intent`
+- `sp-vision-diagnose auto-aim armor-rec`
 
-- 提取出无 UI 的 `AutoAimDiagnoseSession`
-- 将 JSON snapshot 构造逻辑下沉为可复用接口
-
-目标：
-
-- Python 可以直接消费 snapshot
+Python 侧现在直接通过 `pybind11` 绑定的 `Camera`、`CBoard`、`Runtime` 驱动实时闭环，旧 C++ UI 文件已经不再需要。
 
 #### [diagnostics/auto_aim/auto_aim_ui_tune.cpp](/home/cr/Codes/sp_vision_25/diagnostics/auto_aim/auto_aim_ui_tune.cpp)
 

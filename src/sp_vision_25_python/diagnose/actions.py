@@ -17,6 +17,7 @@ from .gimbal_session import (
     run_gimbal_watch,
 )
 from .gimbal_link_probe import run_gimbal_link_diag, run_gimbal_serial_probe
+from .auto_aim_live import run_auto_aim_live
 from .runner import run_executable
 from .paths import repo_root
 from .system import command_exists, default_config_path, gimbal_scan_ports, run_and_capture, run_silently
@@ -97,6 +98,16 @@ def _has_show_arg(extra_args: list[str]) -> bool:
         if arg in {"--show", "-s"} or arg.startswith("--show="):
             return True
     return False
+
+
+def _show_requested(extra_args: list[str], default: bool) -> bool:
+    value = default
+    for arg in extra_args:
+        if arg in {"--show", "-s"}:
+            value = True
+        elif arg.startswith("--show="):
+            value = arg.split("=", 1)[1].lower() not in {"0", "false", "no", "off"}
+    return value
 
 
 def _pop_input_arg(extra_args: list[str], default: str) -> tuple[str, list[str]]:
@@ -437,17 +448,22 @@ def handle_auto_aim_action(action: str, config: Path | None, extra_args: list[st
     if action == "rune-tune":
         return _run_rune_tune(cfg, extra_args)
     if action == "armor-box":
-        args = [str(cfg), *extra_args]
-        if not _has_show_arg(extra_args):
-            args.insert(1, "--show=true")
-        return run_executable(binary_path("auto_aim", "auto_aim_ui_test"), args)
+        return run_auto_aim_live(
+            cfg, extra_args, show=_show_requested(extra_args, True), no_send=False, title="armor-box"
+        )
     if action == "armor-intent":
-        args = [str(cfg), "--no-send=true", *extra_args]
-        if not _has_show_arg(extra_args):
-            args.insert(1, "--show=true")
-        return run_executable(binary_path("auto_aim", "auto_aim_ui_test"), args)
+        return run_auto_aim_live(
+            cfg,
+            extra_args,
+            show=_show_requested(extra_args, True),
+            no_send=True,
+            use_enemy_color=False,
+            title="armor-intent",
+        )
     if action == "armor-rec":
-        return run_executable(binary_path("auto_aim", "auto_aim_ui_test"), [str(cfg), *extra_args])
+        return run_auto_aim_live(
+            cfg, extra_args, show=_show_requested(extra_args, False), no_send=False, title="armor-rec"
+        )
     if action == "armor-tune":
         args = [str(cfg), *extra_args]
         if not _has_show_arg(extra_args):

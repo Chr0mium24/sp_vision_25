@@ -17,6 +17,9 @@ def test_bindings_command_smokes():
     result = runner.invoke(app, ["bindings"])
     assert result.exit_code == 0
     assert "sp_vision_bindings" in result.stdout
+    assert "Camera" in result.stdout
+    assert "CBoard" in result.stdout
+    assert "Command" in result.stdout
     assert "Gimbal" in result.stdout
 
 
@@ -37,7 +40,8 @@ def test_gimbal_list_is_handled_in_python():
 def test_auto_aim_list_is_handled_in_python():
     result = runner.invoke(app, ["auto-aim", "list"])
     assert result.exit_code == 0
-    assert "auto_aim_ui_test" in result.stdout
+    assert "sp-vision-diagnose auto-aim armor-box" in result.stdout
+    assert "auto_aim_ui_tune" in result.stdout
 
 
 def test_camera_info_is_handled_in_python(monkeypatch):
@@ -294,14 +298,63 @@ def test_gimbal_script_control_is_handled_in_python(monkeypatch):
 def test_auto_aim_armor_box_is_handled_in_python(monkeypatch):
     called = []
 
-    def fake_handle(action, config, extra_args):
-        called.append((action, config, extra_args))
-        return 0
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
 
-    monkeypatch.setattr(main, "handle_auto_aim_action", fake_handle)
+    monkeypatch.setattr(
+        actions,
+        "run_auto_aim_live",
+        lambda config, extra_args, **kwargs: called.append((config, extra_args, kwargs)) or 0,
+    )
     result = runner.invoke(app, ["auto-aim", "armor-box", "--show=true"])
     assert result.exit_code == 0
-    assert called == [("armor-box", None, ["--show=true"])]
+    assert called == [
+        (
+            default_config_path(),
+            ["--show=true"],
+            {"show": True, "no_send": False, "title": "armor-box"},
+        )
+    ]
+
+
+def test_auto_aim_armor_intent_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions,
+        "run_auto_aim_live",
+        lambda config, extra_args, **kwargs: called.append((config, extra_args, kwargs)) or 0,
+    )
+    result = runner.invoke(app, ["auto-aim", "armor-intent", "--show=true"])
+    assert result.exit_code == 0
+    assert called == [
+        (
+            default_config_path(),
+            ["--show=true"],
+            {"show": True, "no_send": True, "use_enemy_color": False, "title": "armor-intent"},
+        )
+    ]
+
+
+def test_auto_aim_armor_rec_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions,
+        "run_auto_aim_live",
+        lambda config, extra_args, **kwargs: called.append((config, extra_args, kwargs)) or 0,
+    )
+    result = runner.invoke(app, ["auto-aim", "armor-rec"])
+    assert result.exit_code == 0
+    assert called == [
+        (default_config_path(), [], {"show": False, "no_send": False, "title": "armor-rec"})
+    ]
 
 
 def test_auto_aim_rune_tune_is_handled_in_python(monkeypatch):

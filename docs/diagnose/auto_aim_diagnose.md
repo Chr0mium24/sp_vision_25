@@ -5,7 +5,6 @@
 ## 1. 前置条件
 
 - 已完成编译，且存在下列可执行文件：
-  - `build/bin/diag/auto_aim/auto_aim_ui_test`
   - `build/bin/diag/auto_aim/auto_aim_ui_tune`
   - `build/bin/tests/auto_buff/auto_power_rune_test`
 - 相机和云台在线联调时，串口/相机链路已正常（可先用 gimbal/camera diagnose 确认）。
@@ -40,7 +39,7 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-box configs/
 
 说明：
 
-- 调用 `auto_aim_ui_test --show=true`
+- 调用 Python diagnose 的 `armor-box` 入口
 - 图像窗口里会显示目标框和重投影框
 - TUI 同时显示 `targets/state/cmd` 等关键状态
 - 按 `S` 可将当前帧完整快照保存到 `logs/auto_aim_snapshots/<timestamp>_<index>/`

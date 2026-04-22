@@ -28,8 +28,21 @@ else()
         ${PROJECT_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_win.cc)
 endif()
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+  set(CAMERA_VENDOR_LIB_DIR ${PROJECT_SOURCE_DIR}/io/hikrobot/lib/amd64)
+  set(MINDVISION_VENDOR_LIB_DIR ${PROJECT_SOURCE_DIR}/io/mindvision/lib/amd64)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+  set(CAMERA_VENDOR_LIB_DIR ${PROJECT_SOURCE_DIR}/io/hikrobot/lib/arm64)
+  set(MINDVISION_VENDOR_LIB_DIR ${PROJECT_SOURCE_DIR}/io/mindvision/lib/arm64)
+else()
+  message(FATAL_ERROR "Unsupported architecture for bindings: ${CMAKE_HOST_SYSTEM_PROCESSOR}!")
+endif()
+
 add_library(sp_vision_bindings MODULE
     module.cpp
+    io/command_bindings.cpp
+    io/camera_bindings.cpp
+    io/cboard_bindings.cpp
     io/gimbal_bindings.cpp
     tools/crc_bindings.cpp
     tools/ekf_bindings.cpp
@@ -45,6 +58,11 @@ add_library(sp_vision_bindings MODULE
     ${PROJECT_SOURCE_DIR}/tools/math_tools.cpp
     ${PROJECT_SOURCE_DIR}/tools/img_tools.cpp
     ${PROJECT_SOURCE_DIR}/tools/trajectory.cpp
+    ${PROJECT_SOURCE_DIR}/io/hikrobot/hikrobot.cpp
+    ${PROJECT_SOURCE_DIR}/io/mindvision/mindvision.cpp
+    ${PROJECT_SOURCE_DIR}/io/usbcamera/usbcamera.cpp
+    ${PROJECT_SOURCE_DIR}/io/camera.cpp
+    ${PROJECT_SOURCE_DIR}/io/cboard.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/armor.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/solver.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/target.cpp
@@ -64,11 +82,18 @@ add_library(sp_vision_bindings MODULE
 target_include_directories(sp_vision_bindings PRIVATE
     "${PROJECT_SOURCE_DIR}"
     "${PROJECT_SOURCE_DIR}/io/serial/include"
+    "${PROJECT_SOURCE_DIR}/io/hikrobot/include"
+    "${PROJECT_SOURCE_DIR}/io/mindvision/include"
     "${PYBIND11_INCLUDE_DIR}"
+)
+target_link_directories(sp_vision_bindings PRIVATE
+    "${CAMERA_VENDOR_LIB_DIR}"
+    "${MINDVISION_VENDOR_LIB_DIR}"
 )
 target_link_libraries(
     sp_vision_bindings
-    PRIVATE Python3::Module yaml-cpp fmt::fmt spdlog::spdlog ${OpenCV_LIBS} openvino::runtime)
+    PRIVATE Python3::Module yaml-cpp fmt::fmt spdlog::spdlog ${OpenCV_LIBS} openvino::runtime
+            MvCameraControl MVSDK usb-1.0)
 if(APPLE)
     target_link_libraries(sp_vision_bindings PRIVATE ${FOUNDATION_LIBRARY} ${IOKIT_LIBRARY})
 elseif(UNIX)

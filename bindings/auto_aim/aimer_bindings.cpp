@@ -107,20 +107,6 @@ std::list<auto_aim::Target> targets_from_sequence(const py::sequence & sequence)
 
 void bind_aimer(py::module_ & m)
 {
-  py::class_<io::Command>(m, "Command")
-    .def(py::init<>())
-    .def_readwrite("control", &io::Command::control)
-    .def_readwrite("shoot", &io::Command::shoot)
-    .def_readwrite("yaw", &io::Command::yaw)
-    .def_readwrite("pitch", &io::Command::pitch)
-    .def_readwrite("horizon_distance", &io::Command::horizon_distance);
-
-  py::enum_<io::ShootMode>(m, "ShootMode")
-    .value("left_shoot", io::left_shoot)
-    .value("right_shoot", io::right_shoot)
-    .value("both_shoot", io::both_shoot)
-    .export_values();
-
   py::class_<auto_aim::AimPoint>(m, "AimPoint")
     .def_readwrite("valid", &auto_aim::AimPoint::valid)
     .def_readwrite("xyza", &auto_aim::AimPoint::xyza);

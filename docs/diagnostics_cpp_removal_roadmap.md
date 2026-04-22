@@ -10,7 +10,6 @@
 
 ## 1. 现存文件清单
 
-- `diagnostics/auto_aim/auto_aim_ui_test.cpp`
 - `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
 
 ## 2. 当前职责定位
@@ -41,23 +40,7 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 ## 4. 文件级路线图
 
-### 4.1 `diagnostics/auto_aim/auto_aim_ui_test.cpp`
-
-当前问题：
-
-- 既负责 UI，又负责 snapshot，又负责 runtime 驱动
-
-替代方向：
-
-- 提取无 UI 的 `AutoAimDiagnoseSession`
-- Python TUI / CLI 直接消费 snapshot
-- 运行时逻辑由 `pybind11` 暴露的 runtime/session 接口承接
-
-删除条件：
-
-- `sp-vision-diagnose auto-aim armor-box/armor-intent/armor-rec/armor-offline/rune-box/rune-rec/rune-online/rune-online-mpc` 已完全由 Python + `pybind11` 接管
-
-### 4.2 `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
+### 4.1 `diagnostics/auto_aim/auto_aim_ui_tune.cpp`
 
 当前问题：
 
@@ -81,13 +64,12 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 优先完成：
 
-- `AutoAimDiagnoseSession`
 - runtime snapshot 绑定
 - Python 版 `armor-box` / `armor-tune` / `rune-tune`
 
 目标：
 
-- 让 `auto_aim_ui_test.cpp` 和 `auto_aim_ui_tune.cpp` 退出主路径
+- 让 `auto_aim_ui_tune.cpp` 退出主路径
 
 ### 阶段 B：最后删源码
 

@@ -152,9 +152,7 @@ add_executable(planner_test_offline tests/planner/planner_test_offline.cpp)
 target_link_libraries(planner_test_offline ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim tools io)
 
 ##################diagnostics##################
-add_executable(auto_aim_ui_test diagnostics/auto_aim/auto_aim_ui_test.cpp)
 add_executable(auto_aim_ui_tune diagnostics/auto_aim/auto_aim_ui_tune.cpp)
-target_link_libraries(auto_aim_ui_test ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 target_link_libraries(auto_aim_ui_tune ${OpenCV_LIBS} fmt::fmt yaml-cpp tools io auto_aim)
 
 function(set_test_output target group)
@@ -194,7 +192,6 @@ set_test_output(planner_test_offline planner)
 set_test_output(cboard_test system)
 set_test_output(dm_test system)
 
-set_diag_output(auto_aim_ui_test auto_aim)
 set_diag_output(auto_aim_ui_tune auto_aim)
 set_diag_output(auto_buff_debug auto_buff)
 set_diag_output(auto_buff_debug_mpc auto_buff)

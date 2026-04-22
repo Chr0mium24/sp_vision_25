@@ -125,7 +125,7 @@ class DiagnoseTUI(App):
             _domain_panel(
                 "auto_aim",
                 "Auto Aim",
-                "Auto-aim diagnose is already routing through Python and can drive the real C++ binaries.",
+                "Auto-aim diagnose now uses Python live sessions over the real runtime bindings.",
                 [
                     "sp-vision-diagnose auto-aim list",
                     "sp-vision-diagnose auto-aim armor-box configs/standard3.yaml",
