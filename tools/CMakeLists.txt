@@ -1,15 +1,20 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_library(tools OBJECT 
-    runtime/exiter.cpp
-    math/extended_kalman_filter.cpp
-    math/ransac_sine_fitter.cpp
-    vision/img_tools.cpp
-    math/math_tools.cpp
-    runtime/plotter.cpp
-    math/trajectory.cpp
-    runtime/recorder.cpp
-    runtime/logger.cpp
-    math/pid.cpp
-    protocol/crc.cpp
+add_subdirectory(runtime)
+add_subdirectory(math)
+add_subdirectory(vision)
+add_subdirectory(protocol)
+
+add_library(tools STATIC)
+target_sources(
+    tools PRIVATE
+    $<TARGET_OBJECTS:tools_runtime>
+    $<TARGET_OBJECTS:tools_math>
+    $<TARGET_OBJECTS:tools_vision>
+    $<TARGET_OBJECTS:tools_protocol>
+)
+
+set_target_properties(
+    tools_runtime tools_math tools_vision tools_protocol tools
+    PROPERTIES POSITION_INDEPENDENT_CODE ON
 )

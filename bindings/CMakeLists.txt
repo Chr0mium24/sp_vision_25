@@ -52,12 +52,6 @@ add_library(sp_vision_bindings MODULE
     auto_aim/tracker_bindings.cpp
     auto_aim/aimer_bindings.cpp
     auto_aim/runtime_bindings.cpp
-    ${PROJECT_SOURCE_DIR}/tools/protocol/crc.cpp
-    ${PROJECT_SOURCE_DIR}/tools/math/extended_kalman_filter.cpp
-    ${PROJECT_SOURCE_DIR}/tools/runtime/logger.cpp
-    ${PROJECT_SOURCE_DIR}/tools/math/math_tools.cpp
-    ${PROJECT_SOURCE_DIR}/tools/vision/img_tools.cpp
-    ${PROJECT_SOURCE_DIR}/tools/math/trajectory.cpp
     ${PROJECT_SOURCE_DIR}/io/hikrobot/hikrobot.cpp
     ${PROJECT_SOURCE_DIR}/io/mindvision/mindvision.cpp
     ${PROJECT_SOURCE_DIR}/io/usbcamera/usbcamera.cpp
@@ -93,7 +87,7 @@ target_link_directories(sp_vision_bindings PRIVATE
 target_link_libraries(
     sp_vision_bindings
     PRIVATE Python3::Module yaml-cpp fmt::fmt spdlog::spdlog ${OpenCV_LIBS} openvino::runtime
-            MvCameraControl MVSDK usb-1.0)
+            MvCameraControl MVSDK usb-1.0 tools)
 if(APPLE)
     target_link_libraries(sp_vision_bindings PRIVATE ${FOUNDATION_LIBRARY} ${IOKIT_LIBRARY})
 elseif(UNIX)
