@@ -6,6 +6,7 @@ void bind_crc(py::module_ & m);
 void bind_armor(py::module_ & m);
 void bind_ekf(py::module_ & m);
 void bind_solver(py::module_ & m);
+void bind_target(py::module_ & m);
 
 PYBIND11_MODULE(sp_vision_bindings, m)
 {
@@ -14,4 +15,5 @@ PYBIND11_MODULE(sp_vision_bindings, m)
   bind_armor(m);
   bind_ekf(m);
   bind_solver(m);
+  bind_target(m);
 }

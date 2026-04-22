@@ -43,3 +43,11 @@
 - Python 侧可以直接调用真实 C++ 的重投影与 solvePnP 逻辑
 - 新增了 `python_tests/test_solver_binding.py`
 - 当前 Python 测试已覆盖 CRC、EKF、import、Solver roundtrip
+
+### 7. Target 绑定
+
+- 新增了 `auto_aim::Target` 的 Python 绑定
+- Python 侧可以直接基于真实 `Armor` 构造 `Target`
+- Python 侧可以直接调用 `predict` / `update`
+- 新增了 `python_tests/test_target_binding.py`
+- 当前 Python 测试已覆盖 CRC、EKF、Armor、Solver、Target

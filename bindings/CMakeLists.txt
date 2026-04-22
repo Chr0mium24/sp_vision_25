@@ -17,6 +17,7 @@ add_library(sp_vision_bindings MODULE
     tools/ekf_bindings.cpp
     auto_aim/armor_bindings.cpp
     auto_aim/solver_bindings.cpp
+    auto_aim/target_bindings.cpp
     ${PROJECT_SOURCE_DIR}/tools/crc.cpp
     ${PROJECT_SOURCE_DIR}/tools/extended_kalman_filter.cpp
     ${PROJECT_SOURCE_DIR}/tools/logger.cpp
@@ -24,6 +25,7 @@ add_library(sp_vision_bindings MODULE
     ${PROJECT_SOURCE_DIR}/tools/trajectory.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/armor.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/solver.cpp
+    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/target.cpp
 )
 
 target_include_directories(sp_vision_bindings PRIVATE
