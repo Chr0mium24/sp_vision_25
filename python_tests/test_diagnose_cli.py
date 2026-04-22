@@ -138,3 +138,12 @@ def test_auto_aim_rune_tune_is_handled_in_python(monkeypatch):
     result = runner.invoke(app, ["auto-aim", "rune-tune", "assets/demo/power_rune_demo"])
     assert result.exit_code == 0
     assert called == [("rune-tune", None, ["assets/demo/power_rune_demo"])]
+
+
+def test_tui_command_launches_dashboard(monkeypatch):
+    called = []
+
+    monkeypatch.setattr(main, "launch_tui", lambda: called.append(True))
+    result = runner.invoke(app, ["tui"])
+    assert result.exit_code == 0
+    assert called == [True]

@@ -95,7 +95,7 @@ IMU型号：使用C板内置BMI088作为IMU\
     ```
 
 4. Python diagnose 入口（可选）
-    现在已经有一个统一的 Python 控制面入口，正在逐步替换现有 diagnose 脚本；目前 `list`、`camera info`、`camera release`、`camera tune`、`gimbal port-info` 以及大部分高频启动命令已经由 Python 直接接管，旧的 `diagnostics/*.sh` 也已降级为薄包装。`sp-vision-diagnose` 现在按 `camera`、`gimbal`、`auto-aim` 三个子应用组织，结构比以前更清晰。
+    现在已经有一个统一的 Python 控制面入口，正在逐步替换现有 diagnose 脚本；目前 `list`、`camera info`、`camera release`、`camera tune`、`gimbal port-info` 以及大部分高频启动命令已经由 Python 直接接管，旧的 `diagnostics/*.sh` 也已降级为薄包装。`sp-vision-diagnose` 现在按 `camera`、`gimbal`、`auto-aim` 三个子应用组织，并新增了 `tui` 入口作为后续面板的基础。
     ```bash
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose status
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose bindings
@@ -110,6 +110,7 @@ IMU型号：使用C板内置BMI088作为IMU\
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim list
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-box configs/standard3.yaml
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim rune-tune configs/sentry.yaml assets/demo/power_rune_demo
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose tui
     ```
 
 5. 运行demo:

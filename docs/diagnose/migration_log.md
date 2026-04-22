@@ -118,3 +118,18 @@
 - 每个子应用按动作拆分为独立命令，减少了 `action` 分发的集中度
 - 保留了 `help` 子命令，便于和旧脚本调用习惯兼容
 - 这一步让后续接入 TUI/状态面板更容易继续演进
+
+### 17. TUI 骨架
+
+- 新增了 `diagnose/tui.py`
+- 新增了 `sp-vision-diagnose tui` 命令
+- TUI 当前以状态总览和三个业务域分栏为主，作为后续参数面板和实时状态展示的起点
+- 新增了 TUI 冒烟测试，确保入口可以被正常启动
+
+### 18. CLI 参数收口
+
+- 将 `camera`、`gimbal`、`auto-aim` 子应用里需要透传额外参数的命令统一改成 `ctx.args` 解析
+- 补齐了 `gimbal list`，让三个业务域的列表命令都由 Python 直接接管
+- 修正了 `camera quick`、`camera release`、`camera tune`、`auto-aim armor-box`、`auto-aim rune-tune` 等命令的参数分流
+- 强制重装了本地 `uv` 环境里的 `sp-vision-25-python`，确保运行时加载到的是最新源码
+- 这一轮之后，`uv run pytest` 和典型 diagnose 命令都恢复为稳定可用状态
