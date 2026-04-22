@@ -8,6 +8,7 @@ from rich.table import Table
 
 from .bindings import binding_status
 from .inventory import print_binary_status
+from .system import print_camera_info, print_gimbal_port_info
 from .paths import build_dir, build_python_dir, diagnose_script, repo_root
 from .runner import run_script
 
@@ -103,6 +104,9 @@ def camera(
     if action == "list":
         _run_list("camera")
         return
+    if action == "info":
+        print_camera_info(console)
+        return
     raise typer.Exit(code=_run_diagnose_script("camera", action, config, list(ctx.args)))
 
 
@@ -116,6 +120,9 @@ def gimbal(
 
     if action == "list":
         _run_list("gimbal")
+        return
+    if action == "port-info":
+        print_gimbal_port_info(config, console)
         return
     raise typer.Exit(code=_run_diagnose_script("gimbal", action, config, list(ctx.args)))
 

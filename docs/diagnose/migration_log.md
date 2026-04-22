@@ -91,7 +91,22 @@
 - 这三类列表命令现在只检查构建产物存在性，不再依赖 Bash 脚本
 - 新增了对应 CLI 测试，验证这三条路径都已经从 Python 侧接管
 
+### 13. Python 继续接管只读信息命令
+
+- 新增了 `diagnose/config.py` 和 `diagnose/system.py`
+- 将 `camera info` 改为 Python 直接输出 `/dev/video*` 和 `v4l2-ctl` 信息
+- 将 `gimbal port-info` 改为 Python 直接读取 YAML 配置并输出串口信息
+- 新增了对应 CLI 测试，确保这两条路径也不再回落到 Bash
+
 ### 13. list 输出收敛
 
 - 将 `list` 的输出切回标准文本输出，避免 Rich 自动换行和样式干扰
 - 继续保留对 Bash 桥接的 guard 测试，确保这三条命令不会回落到旧脚本
+
+### 14. 继续接管纯状态命令
+
+- 新增了 `diagnose/config.py` 和 `diagnose/system.py`
+- 将 `camera info` 改为 Python 直接实现
+- 将 `gimbal port-info` 改为 Python 直接实现
+- 这两个命令现在直接读 `/dev`、`/dev/serial/by-id` 和 YAML 配置，不再依赖对应 Bash 脚本
+- 新增了对应 CLI 测试，验证 Python 分支确实被调用

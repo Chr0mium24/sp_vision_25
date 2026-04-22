@@ -45,3 +45,49 @@ def test_auto_aim_list_is_handled_in_python(monkeypatch):
     result = _invoke_with_guard(monkeypatch, ["auto-aim", "list"])
     assert result.exit_code == 0
     assert "auto_aim_ui_test" in result.stdout
+
+
+def test_camera_info_is_handled_in_python(monkeypatch):
+    called = []
+
+    def fake_print_camera_info(console=None):
+        called.append(console is not None)
+
+    monkeypatch.setattr(main, "print_camera_info", fake_print_camera_info)
+    result = runner.invoke(app, ["camera", "info"])
+    assert result.exit_code == 0
+    assert called == [True]
+
+
+def test_gimbal_port_info_is_handled_in_python(monkeypatch):
+    called = []
+
+    def fake_print_gimbal_port_info(config_path=None, console=None):
+        called.append((config_path, console is not None))
+
+    monkeypatch.setattr(main, "print_gimbal_port_info", fake_print_gimbal_port_info)
+    result = runner.invoke(app, ["gimbal", "port-info"])
+    assert result.exit_code == 0
+    assert called == [(None, True)]
+
+
+def test_camera_info_is_handled_in_python(monkeypatch):
+    def fake_camera_info(console):
+        console.print("camera-info-called", markup=False)
+
+    monkeypatch.setattr(main, "_run_diagnose_script", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("bridge should not run")))
+    monkeypatch.setattr(main, "print_camera_info", fake_camera_info)
+    result = runner.invoke(app, ["camera", "info"])
+    assert result.exit_code == 0
+    assert "camera-info-called" in result.stdout
+
+
+def test_gimbal_port_info_is_handled_in_python(monkeypatch):
+    def fake_port_info(config, console):
+        console.print(f"port-info:{config}", markup=False)
+
+    monkeypatch.setattr(main, "_run_diagnose_script", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("bridge should not run")))
+    monkeypatch.setattr(main, "print_gimbal_port_info", fake_port_info)
+    result = runner.invoke(app, ["gimbal", "port-info"])
+    assert result.exit_code == 0
+    assert "port-info:" in result.stdout
