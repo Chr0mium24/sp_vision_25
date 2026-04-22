@@ -3,19 +3,19 @@
 #include <string>
 
 #include "io/camera.hpp"
-#include "io/gimbal/gimbal.hpp"
+#include "io/cboard.hpp"
 #include "tasks/auto_buff/buff_aimer.hpp"
 #include "tasks/auto_buff/buff_detector.hpp"
 #include "tasks/auto_buff/buff_solver.hpp"
 #include "tasks/auto_buff/buff_target.hpp"
 #include "tasks/auto_buff/buff_type.hpp"
-#include "tools/exiter.hpp"
-#include "tools/img_tools.hpp"
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
-#include "tools/plotter.hpp"
-#include "tools/recorder.hpp"
-#include "tools/trajectory.hpp"
+#include "tools/runtime/exiter.hpp"
+#include "tools/vision/img_tools.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
+#include "tools/runtime/plotter.hpp"
+#include "tools/runtime/recorder.hpp"
+#include "tools/math/trajectory.hpp"
 
 // 定义命令行参数
 const std::string keys =
@@ -37,8 +37,8 @@ int main(int argc, char * argv[])
   tools::Recorder recorder;
   tools::Exiter exiter;
 
-  // 初始化云台、相机
-  io::Gimbal gimbal(config_path);
+  // 初始化C板、相机
+  io::CBoard cboard(config_path);
   io::Camera camera(config_path);
 
   // 初始化识别器、解算器、追踪器、瞄准器
@@ -54,8 +54,7 @@ int main(int argc, char * argv[])
 
   while (!exiter.exit()) {
     camera.read(img, t);
-    q = gimbal.q(t);
-    auto gs = gimbal.state();
+    q = cboard.imu_at(t);
     // recorder.record(img, q, t);
 
     // -------------- 打符核心逻辑 --------------
@@ -70,11 +69,10 @@ int main(int argc, char * argv[])
 
     auto target_copy = target;
 
-    auto plan = aimer.mpc_aim(target_copy, t, gs, true);
+    auto command = aimer.aim(target_copy, t, cboard.bullet_speed, true);
 
-    gimbal.send(
-      plan.control, plan.fire, plan.yaw, plan.yaw_vel, plan.yaw_acc, plan.pitch, plan.pitch_vel,
-      plan.pitch_acc);
+    cboard.send(command);
+
     // -------------- 调试输出 --------------
 
     nlohmann::json data;
@@ -137,19 +135,14 @@ int main(int argc, char * argv[])
     }
 
     // 云台响应情况
-    data["gimbal_yaw"] = gs.yaw * 57.3;
-    data["gimbal_pitch"] = gs.pitch * 57.3;
-    data["gimbal_yaw_vel"] = gs.yaw_vel * 57.3;
-    data["gimbal_pitch_vel"] = gs.pitch_vel * 57.3;
+    Eigen::Vector3d ypr = tools::eulers(solver.R_gimbal2world(), 2, 1, 0);
+    data["gimbal_yaw"] = ypr[0] * 57.3;
+    data["gimbal_pitch"] = ypr[1] * 57.3;
 
-    if (plan.control) {
-      data["plan_yaw"] = plan.yaw * 57.3;
-      data["plan_pitch"] = plan.pitch * 57.3;
-      data["plan_yaw_vel"] = plan.yaw_vel * 57.3;
-      data["plan_pitch_vel"] = plan.pitch_vel * 57.3;
-      data["plan_yaw_acc"] = plan.yaw_acc * 57.3;
-      data["plan_pitch_acc"] = plan.pitch_acc * 57.3;
-      data["shoot"] = plan.fire ? 1 : 0;
+    if (command.control) {
+      data["cmd_yaw"] = command.yaw * 57.3;
+      data["cmd_pitch"] = command.pitch * 57.3;
+      data["shoot"] = command.shoot ? 1 : 0;
     }
 
     plotter.plot(data);

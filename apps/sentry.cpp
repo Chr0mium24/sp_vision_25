@@ -16,12 +16,12 @@
 #include "tasks/auto_aim/tracker.hpp"
 #include "tasks/auto_aim/yolo.hpp"
 #include "tasks/omniperception/decider.hpp"
-#include "tools/exiter.hpp"
-#include "tools/img_tools.hpp"
-#include "tools/logger.hpp"
-#include "tools/math_tools.hpp"
-#include "tools/plotter.hpp"
-#include "tools/recorder.hpp"
+#include "tools/runtime/exiter.hpp"
+#include "tools/vision/img_tools.hpp"
+#include "tools/runtime/logger.hpp"
+#include "tools/math/math_tools.hpp"
+#include "tools/runtime/plotter.hpp"
+#include "tools/runtime/recorder.hpp"
 
 using namespace std::chrono;
 
@@ -46,6 +46,8 @@ int main(int argc, char * argv[])
   io::CBoard cboard(config_path);
   io::Camera camera(config_path);
   io::Camera back_camera("configs/camera.yaml");
+  io::USBCamera usbcam1("video0", config_path);
+  io::USBCamera usbcam2("video2", config_path);
 
   auto_aim::YOLO yolo(config_path, false);
   auto_aim::Solver solver(config_path);
@@ -86,7 +88,7 @@ int main(int argc, char * argv[])
 
     /// 全向感知逻辑
     if (tracker.state() == "lost")
-      command = decider.decide(yolo, gimbal_pos, back_camera);
+      command = decider.decide(yolo, gimbal_pos, usbcam1, usbcam2, back_camera);
     else
       command = aimer.aim(targets, timestamp, cboard.bullet_speed, cboard.shoot_mode);
 

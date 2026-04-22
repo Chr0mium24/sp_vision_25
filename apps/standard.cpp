@@ -4,8 +4,8 @@
 #include "io/camera.hpp"
 #include "io/gimbal/gimbal.hpp"
 #include "tasks/auto_aim/auto_aim_runtime.hpp"
-#include "tools/exiter.hpp"
-#include "tools/logger.hpp"
+#include "tools/runtime/exiter.hpp"
+#include "tools/runtime/logger.hpp"
 
 const std::string keys =
   "{help h usage ? |      | 输出命令行参数说明}"
