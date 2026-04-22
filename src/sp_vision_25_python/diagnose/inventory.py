@@ -63,6 +63,13 @@ def binary_specs(domain: str) -> tuple[BinarySpec, ...]:
     raise ValueError(f"Unknown binary domain: {domain}")
 
 
+def binary_path(domain: str, label: str) -> Path:
+    for spec in binary_specs(domain):
+        if spec.label == label:
+            return spec.path
+    raise KeyError(f"Unknown binary label {label!r} for domain {domain!r}")
+
+
 def print_binary_status(domain: str) -> None:
     for spec in binary_specs(domain):
         status = "ok" if spec.path.is_file() and os_access(spec.path) else "missing"

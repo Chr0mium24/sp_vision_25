@@ -10,6 +10,10 @@ from .config import read_scalar
 from .paths import repo_root
 
 
+def existing_paths(paths: list[Path]) -> list[Path]:
+    return [path for path in paths if path.exists()]
+
+
 def video_devices() -> list[Path]:
     dev_dir = Path("/dev")
     return sorted(dev_dir.glob("video*"))
@@ -17,6 +21,22 @@ def video_devices() -> list[Path]:
 
 def serial_by_id_entries() -> list[Path]:
     return sorted(Path("/dev/serial/by-id").glob("*"))
+
+
+def gimbal_scan_ports() -> list[str]:
+    defaults = [
+        Path("/dev/ttyACM0"),
+        Path("/dev/ttyACM1"),
+        Path("/dev/ttyACM2"),
+        Path("/dev/ttyUSB0"),
+        Path("/dev/ttyUSB1"),
+        Path("/dev/ttyUSB2"),
+        Path("/dev/ttyS0"),
+    ]
+    detected = existing_paths(defaults)
+    if detected:
+        return [str(path) for path in detected]
+    return [str(path) for path in defaults if path.name in {"ttyACM0", "ttyACM1", "ttyUSB0", "ttyUSB1", "ttyS0"}]
 
 
 def default_config_path() -> Path:

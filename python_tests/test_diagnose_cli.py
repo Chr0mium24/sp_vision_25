@@ -53,6 +53,10 @@ def test_camera_info_is_handled_in_python(monkeypatch):
     def fake_print_camera_info(console=None):
         called.append(console is not None)
 
+    def boom(*_args, **_kwargs):
+        raise AssertionError("bridge should not run")
+
+    monkeypatch.setattr(main, "_run_diagnose_script", boom)
     monkeypatch.setattr(main, "print_camera_info", fake_print_camera_info)
     result = runner.invoke(app, ["camera", "info"])
     assert result.exit_code == 0
@@ -65,29 +69,62 @@ def test_gimbal_port_info_is_handled_in_python(monkeypatch):
     def fake_print_gimbal_port_info(config_path=None, console=None):
         called.append((config_path, console is not None))
 
+    def boom(*_args, **_kwargs):
+        raise AssertionError("bridge should not run")
+
+    monkeypatch.setattr(main, "_run_diagnose_script", boom)
     monkeypatch.setattr(main, "print_gimbal_port_info", fake_print_gimbal_port_info)
     result = runner.invoke(app, ["gimbal", "port-info"])
     assert result.exit_code == 0
     assert called == [(None, True)]
 
 
-def test_camera_info_is_handled_in_python(monkeypatch):
-    def fake_camera_info(console):
-        console.print("camera-info-called", markup=False)
+def test_camera_quick_is_handled_in_python(monkeypatch):
+    called = []
 
-    monkeypatch.setattr(main, "_run_diagnose_script", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("bridge should not run")))
-    monkeypatch.setattr(main, "print_camera_info", fake_camera_info)
-    result = runner.invoke(app, ["camera", "info"])
+    def boom(*_args, **_kwargs):
+        raise AssertionError("bridge should not run")
+
+    def fake_handle(action, config, extra_args):
+        called.append((action, config, extra_args))
+        return 0
+
+    monkeypatch.setattr(main, "_run_diagnose_script", boom)
+    monkeypatch.setattr(main, "handle_camera_action", fake_handle)
+    result = runner.invoke(app, ["camera", "quick", "--fps=60"])
     assert result.exit_code == 0
-    assert "camera-info-called" in result.stdout
+    assert called == [("quick", None, ["--fps=60"])]
 
 
-def test_gimbal_port_info_is_handled_in_python(monkeypatch):
-    def fake_port_info(config, console):
-        console.print(f"port-info:{config}", markup=False)
+def test_gimbal_quick_is_handled_in_python(monkeypatch):
+    called = []
 
-    monkeypatch.setattr(main, "_run_diagnose_script", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("bridge should not run")))
-    monkeypatch.setattr(main, "print_gimbal_port_info", fake_port_info)
-    result = runner.invoke(app, ["gimbal", "port-info"])
+    def boom(*_args, **_kwargs):
+        raise AssertionError("bridge should not run")
+
+    def fake_handle(action, config, extra_args):
+        called.append((action, config, extra_args))
+        return 0
+
+    monkeypatch.setattr(main, "_run_diagnose_script", boom)
+    monkeypatch.setattr(main, "handle_gimbal_action", fake_handle)
+    result = runner.invoke(app, ["gimbal", "quick"])
     assert result.exit_code == 0
-    assert "port-info:" in result.stdout
+    assert called == [("quick", None, [])]
+
+
+def test_auto_aim_armor_box_is_handled_in_python(monkeypatch):
+    called = []
+
+    def boom(*_args, **_kwargs):
+        raise AssertionError("bridge should not run")
+
+    def fake_handle(action, config, extra_args):
+        called.append((action, config, extra_args))
+        return 0
+
+    monkeypatch.setattr(main, "_run_diagnose_script", boom)
+    monkeypatch.setattr(main, "handle_auto_aim_action", fake_handle)
+    result = runner.invoke(app, ["auto-aim", "armor-box", "--show=true"])
+    assert result.exit_code == 0
+    assert called == [("armor-box", None, ["--show=true"])]

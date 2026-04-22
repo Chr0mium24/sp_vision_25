@@ -6,6 +6,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from .actions import handle_auto_aim_action, handle_camera_action, handle_gimbal_action
 from .bindings import binding_status
 from .inventory import print_binary_status
 from .system import print_camera_info, print_gimbal_port_info
@@ -93,7 +94,7 @@ def _run_list(domain: str) -> None:
     print_binary_status(domain)
 
 
-@app.command()
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def camera(
     ctx: typer.Context,
     action: str,
@@ -107,10 +108,13 @@ def camera(
     if action == "info":
         print_camera_info(console)
         return
+    exit_code = handle_camera_action(action, config, list(ctx.args))
+    if exit_code is not None:
+        raise typer.Exit(code=exit_code)
     raise typer.Exit(code=_run_diagnose_script("camera", action, config, list(ctx.args)))
 
 
-@app.command()
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def gimbal(
     ctx: typer.Context,
     action: str,
@@ -124,10 +128,16 @@ def gimbal(
     if action == "port-info":
         print_gimbal_port_info(config, console)
         return
+    exit_code = handle_gimbal_action(action, config, list(ctx.args))
+    if exit_code is not None:
+        raise typer.Exit(code=exit_code)
     raise typer.Exit(code=_run_diagnose_script("gimbal", action, config, list(ctx.args)))
 
 
-@app.command(name="auto-aim")
+@app.command(
+    name="auto-aim",
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)
 def auto_aim(
     ctx: typer.Context,
     action: str,
@@ -138,6 +148,9 @@ def auto_aim(
     if action == "list":
         _run_list("auto_aim")
         return
+    exit_code = handle_auto_aim_action(action, config, list(ctx.args))
+    if exit_code is not None:
+        raise typer.Exit(code=exit_code)
     raise typer.Exit(code=_run_diagnose_script("auto_aim", action, config, list(ctx.args)))
 
 

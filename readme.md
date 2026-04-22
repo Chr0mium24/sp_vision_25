@@ -95,13 +95,18 @@ IMU型号：使用C板内置BMI088作为IMU\
     ```
 
 4. Python diagnose 入口（可选）
-    现在已经有一个统一的 Python 控制面入口，用来先桥接现有 diagnose 脚本、后续逐步替换成纯 Python/TUI 流程。
+    现在已经有一个统一的 Python 控制面入口，正在逐步替换现有 diagnose 脚本；目前 `list`、`camera info`、`gimbal port-info` 以及大部分高频启动命令已经由 Python 直接接管。
     ```bash
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose status
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose bindings
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera list
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera quick configs/standard3.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera info
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal help
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal quick configs/standard3.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal port-info
     UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim list
+    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-box configs/standard3.yaml
     ```
 
 5. 运行demo:

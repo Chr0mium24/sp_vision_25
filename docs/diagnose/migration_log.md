@@ -98,15 +98,10 @@
 - 将 `gimbal port-info` 改为 Python 直接读取 YAML 配置并输出串口信息
 - 新增了对应 CLI 测试，确保这两条路径也不再回落到 Bash
 
-### 13. list 输出收敛
+### 14. Python 接管高频启动命令
 
-- 将 `list` 的输出切回标准文本输出，避免 Rich 自动换行和样式干扰
-- 继续保留对 Bash 桥接的 guard 测试，确保这三条命令不会回落到旧脚本
-
-### 14. 继续接管纯状态命令
-
-- 新增了 `diagnose/config.py` 和 `diagnose/system.py`
-- 将 `camera info` 改为 Python 直接实现
-- 将 `gimbal port-info` 改为 Python 直接实现
-- 这两个命令现在直接读 `/dev`、`/dev/serial/by-id` 和 YAML 配置，不再依赖对应 Bash 脚本
-- 新增了对应 CLI 测试，验证 Python 分支确实被调用
+- 新增了 `diagnose/actions.py`
+- 将 `camera quick`、`camera detect`、`camera window`、`camera save`、`camera usb`、`camera usb-detect`、`camera thread`、`camera handeye` 改为 Python 直接启动 C++ 二进制
+- 将 `gimbal quick`、`gimbal rxonly`、`gimbal proto`、`gimbal probe`、`gimbal probe-raw`、`gimbal scan`、`gimbal snapshot`、`gimbal watch`、`gimbal control`、`gimbal script-control`、`gimbal axis`、`gimbal manual-axis` 改为 Python 直接启动 C++ 二进制
+- 将 `auto-aim armor-box`、`armor-intent`、`armor-rec`、`armor-tune`、`armor-offline`、`rune-box`、`rune-rec`、`rune-online`、`rune-online-mpc` 改为 Python 直接启动 C++ 二进制
+- 新增了动作级测试和 CLI 分流测试，确保额外参数能正确传递且不会回落到 Bash
