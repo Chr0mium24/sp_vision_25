@@ -11,8 +11,26 @@ if(NOT PYBIND11_INCLUDE_RESULT EQUAL 0 OR NOT EXISTS "${PYBIND11_INCLUDE_DIR}/py
     message(FATAL_ERROR "pybind11 headers not found in the active Python environment.")
 endif()
 
+if(APPLE)
+    set(SERIAL_BINDING_SOURCES
+        ${PROJECT_SOURCE_DIR}/io/serial/src/serial.cc
+        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/unix.cc
+        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_osx.cc)
+elseif(UNIX)
+    set(SERIAL_BINDING_SOURCES
+        ${PROJECT_SOURCE_DIR}/io/serial/src/serial.cc
+        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/unix.cc
+        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_linux.cc)
+else()
+    set(SERIAL_BINDING_SOURCES
+        ${PROJECT_SOURCE_DIR}/io/serial/src/serial.cc
+        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/win.cc
+        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_win.cc)
+endif()
+
 add_library(sp_vision_bindings MODULE
     module.cpp
+    io/gimbal_bindings.cpp
     tools/crc_bindings.cpp
     tools/ekf_bindings.cpp
     auto_aim/armor_bindings.cpp
@@ -39,13 +57,23 @@ add_library(sp_vision_bindings MODULE
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/yolos/yolov5.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/yolos/yolov8.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/yolos/yolo11.cpp
+    ${PROJECT_SOURCE_DIR}/io/gimbal/gimbal.cpp
+    ${SERIAL_BINDING_SOURCES}
 )
 
 target_include_directories(sp_vision_bindings PRIVATE
     "${PROJECT_SOURCE_DIR}"
+    "${PROJECT_SOURCE_DIR}/io/serial/include"
     "${PYBIND11_INCLUDE_DIR}"
 )
-target_link_libraries(sp_vision_bindings PRIVATE Python3::Module yaml-cpp fmt::fmt spdlog::spdlog ${OpenCV_LIBS} openvino::runtime)
+target_link_libraries(
+    sp_vision_bindings
+    PRIVATE Python3::Module yaml-cpp fmt::fmt spdlog::spdlog ${OpenCV_LIBS} openvino::runtime)
+if(APPLE)
+    target_link_libraries(sp_vision_bindings PRIVATE ${FOUNDATION_LIBRARY} ${IOKIT_LIBRARY})
+elseif(UNIX)
+    target_link_libraries(sp_vision_bindings PRIVATE rt pthread)
+endif()
 set_target_properties(sp_vision_bindings PROPERTIES
     PREFIX ""
     OUTPUT_NAME "sp_vision_bindings"

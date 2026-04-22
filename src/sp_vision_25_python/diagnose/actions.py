@@ -8,6 +8,7 @@ from rich.console import Console
 
 from .config import read_scalar, update_scalar
 from .inventory import binary_path
+from .gimbal_session import run_gimbal_control, run_gimbal_script_control, run_gimbal_snapshot, run_gimbal_watch
 from .runner import run_executable
 from .paths import repo_root
 from .system import command_exists, default_config_path, gimbal_scan_ports, run_and_capture, run_silently
@@ -417,33 +418,13 @@ def handle_gimbal_action(action: str, config: Path | None, extra_args: list[str]
             [str(cfg), f"--ports={ports}", "--duration-ms=3000", "--summary-ms=1000", *extra_args],
         )
     if action == "snapshot":
-        return run_executable(
-            binary_path("gimbal", "gimbal_ui_test"),
-            [str(cfg), "--mode=read", "--dump-once", "--wait-valid-ms=1500", "--nogui", *extra_args],
-        )
+        return run_gimbal_snapshot(cfg, extra_args)
     if action == "watch":
-        return run_executable(
-            binary_path("gimbal", "gimbal_ui_test"),
-            [str(cfg), "--mode=read", "--nogui", *extra_args],
-        )
+        return run_gimbal_watch(cfg, extra_args)
     if action == "control":
-        return run_executable(binary_path("gimbal", "gimbal_ui_test"), [str(cfg), "--mode=control", *extra_args])
+        return run_gimbal_control(cfg, extra_args)
     if action == "script-control":
-        return run_executable(
-            binary_path("gimbal", "gimbal_ui_test"),
-            [
-                str(cfg),
-                "--mode=control",
-                "--no-input",
-                "--duration-ms=5000",
-                "--yaw-deg=3",
-                "--pitch-deg=-1",
-                "--tracking=1",
-                "--fric-on=1",
-                "--fire-mode=1",
-                *extra_args,
-            ],
-        )
+        return run_gimbal_script_control(cfg, extra_args)
     if action == "axis":
         return run_executable(binary_path("gimbal", "gimbal_axis_diag_test"), [str(cfg), *extra_args])
     if action == "manual-axis":

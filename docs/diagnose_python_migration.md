@@ -736,20 +736,15 @@ config/
 
 #### [diagnostics/gimbal/gimbal_ui_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/gimbal/gimbal_ui_test.cpp)
 
-当前问题：
+当前状态：
 
-- 命令行、TUI、渲染、控制逻辑耦合严重
+- 已迁移到 Python 侧的 `GimbalSession`
+- `sp-vision-diagnose gimbal snapshot/watch/control/script-control` 现在直接走 `pybind11`
+- 对应 C++ 源文件和 CMake 目标已删除
 
-建议修改：
+建议后续：
 
-- 第一阶段：保留二进制不动，仅作为 Python 的后端工具
-- 第二阶段：
-  - 将“控制行为”和“状态采样”抽到可复用类
-  - 将 TUI 删除或降级为简单 debug 输出
-
-目标：
-
-- Python Textual 接管交互界面
+- 继续收口 `gimbal_link_diag_test.cpp`、`gimbal_serial_probe.cpp`、`gimbal_axis_diag_test.cpp`、`gimbal_manual_axis_diag_test.cpp`
 
 #### [diagnostics/auto_aim/auto_aim_ui_test.cpp](/home/cr/Codes/sp_vision_25/diagnostics/auto_aim/auto_aim_ui_test.cpp)
 

@@ -30,7 +30,6 @@ def _gimbal_specs() -> tuple[BinarySpec, ...]:
     base = build_dir() / "bin" / "diag" / "gimbal"
     return (
         BinarySpec("gimbal_link_diag_test", base / "gimbal_link_diag_test"),
-        BinarySpec("gimbal_ui_test", base / "gimbal_ui_test"),
         BinarySpec("gimbal_axis_diag_test", base / "gimbal_axis_diag_test"),
         BinarySpec("gimbal_manual_axis_diag_test", base / "gimbal_manual_axis_diag_test"),
         BinarySpec("gimbal_serial_probe", base / "gimbal_serial_probe"),

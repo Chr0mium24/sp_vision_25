@@ -105,12 +105,17 @@ def bindings() -> None:
         for symbol in [
             "Armor",
             "Aimer",
+            "Gimbal",
+            "GimbalMode",
+            "GimbalRxStats",
+            "GimbalState",
             "Command",
             "ExtendedKalmanFilter",
             "Runtime",
             "Solver",
             "Target",
             "Tracker",
+            "VisionToGimbal",
         ]:
             _print_status_row(table, symbol, "yes" if hasattr(module, symbol) else "no")
 

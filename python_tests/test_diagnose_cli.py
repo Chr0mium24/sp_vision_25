@@ -17,6 +17,7 @@ def test_bindings_command_smokes():
     result = runner.invoke(app, ["bindings"])
     assert result.exit_code == 0
     assert "sp_vision_bindings" in result.stdout
+    assert "Gimbal" in result.stdout
 
 
 def test_camera_list_is_handled_in_python():
@@ -29,7 +30,7 @@ def test_camera_list_is_handled_in_python():
 def test_gimbal_list_is_handled_in_python():
     result = runner.invoke(app, ["gimbal", "list"])
     assert result.exit_code == 0
-    assert "gimbal_ui_test" in result.stdout
+    assert "gimbal_link_diag_test" in result.stdout
 
 
 def test_auto_aim_list_is_handled_in_python():
@@ -112,6 +113,66 @@ def test_gimbal_quick_is_handled_in_python(monkeypatch):
     result = runner.invoke(app, ["gimbal", "quick"])
     assert result.exit_code == 0
     assert called == [("quick", None, [])]
+
+
+def test_gimbal_snapshot_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions,
+        "run_gimbal_snapshot",
+        lambda config, extra_args: called.append((config, extra_args)) or 0,
+    )
+    result = runner.invoke(app, ["gimbal", "snapshot", "--wait-valid-ms=100"])
+    assert result.exit_code == 0
+    assert called == [(default_config_path(), ["--wait-valid-ms=100"])]
+
+
+def test_gimbal_watch_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions, "run_gimbal_watch", lambda config, extra_args: called.append((config, extra_args)) or 0
+    )
+    result = runner.invoke(app, ["gimbal", "watch", "--duration-ms=1"])
+    assert result.exit_code == 0
+    assert called == [(default_config_path(), ["--duration-ms=1"])]
+
+
+def test_gimbal_control_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions, "run_gimbal_control", lambda config, extra_args: called.append((config, extra_args)) or 0
+    )
+    result = runner.invoke(app, ["gimbal", "control", "--mode=control"])
+    assert result.exit_code == 0
+    assert called == [(default_config_path(), ["--mode=control"])]
+
+
+def test_gimbal_script_control_is_handled_in_python(monkeypatch):
+    called = []
+
+    import sp_vision_25_python.diagnose.actions as actions
+    from sp_vision_25_python.diagnose.system import default_config_path
+
+    monkeypatch.setattr(
+        actions,
+        "run_gimbal_script_control",
+        lambda config, extra_args: called.append((config, extra_args)) or 0,
+    )
+    result = runner.invoke(app, ["gimbal", "script-control", "--no-input"])
+    assert result.exit_code == 0
+    assert called == [(default_config_path(), ["--no-input"])]
 
 
 def test_auto_aim_armor_box_is_handled_in_python(monkeypatch):

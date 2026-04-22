@@ -10,6 +10,7 @@ void bind_target(py::module_ & m);
 void bind_tracker(py::module_ & m);
 void bind_aimer(py::module_ & m);
 void bind_runtime(py::module_ & m);
+void bind_gimbal(py::module_ & m);
 
 PYBIND11_MODULE(sp_vision_bindings, m)
 {
@@ -22,4 +23,5 @@ PYBIND11_MODULE(sp_vision_bindings, m)
   bind_tracker(m);
   bind_aimer(m);
   bind_runtime(m);
+  bind_gimbal(m);
 }

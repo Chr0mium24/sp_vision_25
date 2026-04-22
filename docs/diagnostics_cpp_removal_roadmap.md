@@ -10,7 +10,6 @@
 
 ## 1. 现存文件清单
 
-- `diagnostics/gimbal/gimbal_ui_test.cpp`
 - `diagnostics/gimbal/gimbal_link_diag_test.cpp`
 - `diagnostics/gimbal/gimbal_serial_probe.cpp`
 - `diagnostics/gimbal/gimbal_axis_diag_test.cpp`
@@ -59,20 +58,15 @@ Python 不重写核心行为，只做控制面、界面和编排。
 
 ### 4.1 `diagnostics/gimbal/gimbal_ui_test.cpp`
 
-当前问题：
+当前状态：
 
-- 既负责 TUI，又负责键盘交互，又负责云台状态采样和控制发送
+- 已由 Python 侧的 `GimbalSession` + `pybind11` 绑定接管
+- `sp-vision-diagnose gimbal snapshot/watch/control/script-control` 现在走 Python
+- 源文件和 CMake 目标已删除
 
-替代方向：
+后续建议：
 
-- 提取 `GimbalDiagnoseSession`
-- Python 侧通过 `pybind11` 直接持有 `io::Gimbal`
-- Python TUI 只负责显示状态和发命令
-
-删除条件：
-
-- `sp-vision-diagnose gimbal quick/rxonly/proto/probe/scan/snapshot/watch/control/script-control` 已完全由 Python + `pybind11` 实现
-- 不再需要这个 C++ TUI 入口做交互
+- 继续把 `quick/rxonly/proto/probe/scan/axis/manual-axis` 也逐步转到 Python
 
 ### 4.2 `diagnostics/gimbal/gimbal_link_diag_test.cpp`
 
@@ -213,4 +207,3 @@ Python 不重写核心行为，只做控制面、界面和编排。
 - [ ] 文档中已不再把它写成当前入口
 - [ ] `./build.sh` 通过
 - [ ] `uv run pytest` 通过
-

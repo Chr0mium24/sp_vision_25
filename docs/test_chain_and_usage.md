@@ -25,7 +25,6 @@ build/bin/diag/<group>/<executable>
 
 ```bash
 build/bin/tests/auto_buff/auto_power_rune_test
-build/bin/diag/gimbal/gimbal_ui_test
 build/bin/diag/auto_aim/auto_aim_ui_test
 ```
 
@@ -38,9 +37,9 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 主程序：
 
 - `gimbal_link_diag_test`（非英雄协议快速诊断：可选发包+持续统计收包）
-- `gimbal_ui_test`（推荐，支持 `read/control` 两模式）
 - `gimbal_test`（基础连通性与发射节奏）
 - `gimbal_response_test`（响应分析）
+- `sp-vision-diagnose gimbal snapshot/watch/control/script-control`（Python 会话入口，推荐）
 
 调用示例：
 
@@ -56,14 +55,17 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal proto
 # 仅收包诊断（不发控制）
 ./build/bin/diag/gimbal/gimbal_link_diag_test configs/standard3.yaml --no-send --duration-ms=3000 --summary-ms=1000
 
-# 只读模式：只看回读，不发控制
-./build/bin/diag/gimbal/gimbal_ui_test configs/standard3.yaml --mode=read --nogui
+# 快照：直接读取一帧云台状态
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal snapshot configs/standard3.yaml
+
+# 只读模式：持续看回读，不发控制
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal watch configs/standard3.yaml --duration-ms=3000
 
 # 控制模式：发送 yaw/pitch/tracking/fire/fric（键盘可交互）
-./build/bin/diag/gimbal/gimbal_ui_test configs/standard3.yaml --mode=control
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal control configs/standard3.yaml
 
 # 脚本化反复调试（无键盘输入，跑5秒自动退出）
-./build/bin/diag/gimbal/gimbal_ui_test configs/standard3.yaml --mode=control --no-input --duration-ms=5000 --yaw-deg=3 --pitch-deg=-1 --tracking=1 --fric-on=1 --fire-mode=1
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal script-control configs/standard3.yaml --no-input
 ```
 
 说明：
@@ -152,7 +154,7 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.y
 - 联调诊断（`build/bin/diag`）：
 - `auto_aim`: `auto_aim_ui_test`, `auto_aim_ui_tune`
 - `auto_buff`: `auto_buff_debug`, `auto_buff_debug_mpc`
-- `gimbal`: `gimbal_ui_test`, `gimbal_link_diag_test`, `gimbal_serial_probe`
+- `gimbal`: `gimbal_link_diag_test`, `gimbal_serial_probe`, `gimbal_axis_diag_test`, `gimbal_manual_axis_diag_test`
 
 ## 4. 常见问题
 
@@ -168,7 +170,6 @@ UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.y
 - 只编译单个测试：
 
 ```bash
-cmake --build build -j"$(nproc)" --target gimbal_ui_test
 cmake --build build -j"$(nproc)" --target auto_aim_ui_test
 cmake --build build -j"$(nproc)" --target auto_aim_ui_tune
 cmake --build build -j"$(nproc)" --target auto_power_rune_test

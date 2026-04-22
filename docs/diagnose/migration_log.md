@@ -157,3 +157,11 @@
 - 删除了 `diagnostics/camera/diagnose.sh`、`diagnostics/gimbal/diagnose.sh`、`diagnostics/auto_aim/diagnose.sh`
 - 当前用户文档与调用示例已经迁移到 `sp-vision-diagnose` 入口
 - 保留的 `diagnostics/*.cpp` 仍然是 Python diagnose 直接调用的 C++ 测试/诊断目标，不属于可删除的“旧东西”
+
+### 22. gimbal Python 会话迁移
+
+- 新增了 `bindings/io/gimbal_bindings.cpp`，把真实的 `io::Gimbal`、`GimbalState`、`GimbalRxStats`、`VisionToGimbal` 暴露给 Python
+- 新增了 `src/sp_vision_25_python/diagnose/gimbal_session.py`，在 Python 侧实现 `snapshot`、`watch`、`control`、`script-control`
+- `sp-vision-diagnose gimbal snapshot/watch/control/script-control` 现在直接走 Python + `pybind11`
+- 删除了 `diagnostics/gimbal/gimbal_ui_test.cpp` 和对应的 CMake 目标，gimbal 的状态/控制链路从这里开始正式离开旧 C++ UI
+- `gimbal list` 也同步收口，移除了不再使用的 `gimbal_ui_test`
