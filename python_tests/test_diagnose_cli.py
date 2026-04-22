@@ -96,6 +96,40 @@ def test_camera_quick_is_handled_in_python(monkeypatch):
     assert called == [("quick", None, ["--fps=60"])]
 
 
+def test_camera_release_is_handled_in_python(monkeypatch):
+    called = []
+
+    def boom(*_args, **_kwargs):
+        raise AssertionError("bridge should not run")
+
+    def fake_handle(action, config, extra_args):
+        called.append((action, config, extra_args))
+        return 0
+
+    monkeypatch.setattr(main, "_run_diagnose_script", boom)
+    monkeypatch.setattr(main, "handle_camera_action", fake_handle)
+    result = runner.invoke(app, ["camera", "release", "--force"])
+    assert result.exit_code == 0
+    assert called == [("release", None, ["--force"])]
+
+
+def test_camera_tune_is_handled_in_python(monkeypatch):
+    called = []
+
+    def boom(*_args, **_kwargs):
+        raise AssertionError("bridge should not run")
+
+    def fake_handle(action, config, extra_args):
+        called.append((action, config, extra_args))
+        return 0
+
+    monkeypatch.setattr(main, "_run_diagnose_script", boom)
+    monkeypatch.setattr(main, "handle_camera_action", fake_handle)
+    result = runner.invoke(app, ["camera", "tune", "--show-log"])
+    assert result.exit_code == 0
+    assert called == [("tune", None, ["--show-log"])]
+
+
 def test_gimbal_quick_is_handled_in_python(monkeypatch):
     called = []
 
@@ -128,3 +162,20 @@ def test_auto_aim_armor_box_is_handled_in_python(monkeypatch):
     result = runner.invoke(app, ["auto-aim", "armor-box", "--show=true"])
     assert result.exit_code == 0
     assert called == [("armor-box", None, ["--show=true"])]
+
+
+def test_auto_aim_rune_tune_is_handled_in_python(monkeypatch):
+    called = []
+
+    def boom(*_args, **_kwargs):
+        raise AssertionError("bridge should not run")
+
+    def fake_handle(action, config, extra_args):
+        called.append((action, config, extra_args))
+        return 0
+
+    monkeypatch.setattr(main, "_run_diagnose_script", boom)
+    monkeypatch.setattr(main, "handle_auto_aim_action", fake_handle)
+    result = runner.invoke(app, ["auto-aim", "rune-tune", "assets/demo/power_rune_demo"])
+    assert result.exit_code == 0
+    assert called == [("rune-tune", None, ["assets/demo/power_rune_demo"])]

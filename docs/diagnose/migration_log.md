@@ -101,7 +101,8 @@
 ### 14. Python 接管高频启动命令
 
 - 新增了 `diagnose/actions.py`
+- 将 `camera release` 和 `camera tune` 改为 Python 直接实现
 - 将 `camera quick`、`camera detect`、`camera window`、`camera save`、`camera usb`、`camera usb-detect`、`camera thread`、`camera handeye` 改为 Python 直接启动 C++ 二进制
 - 将 `gimbal quick`、`gimbal rxonly`、`gimbal proto`、`gimbal probe`、`gimbal probe-raw`、`gimbal scan`、`gimbal snapshot`、`gimbal watch`、`gimbal control`、`gimbal script-control`、`gimbal axis`、`gimbal manual-axis` 改为 Python 直接启动 C++ 二进制
-- 将 `auto-aim armor-box`、`armor-intent`、`armor-rec`、`armor-tune`、`armor-offline`、`rune-box`、`rune-rec`、`rune-online`、`rune-online-mpc` 改为 Python 直接启动 C++ 二进制
+- 将 `auto-aim armor-box`、`armor-intent`、`armor-rec`、`armor-tune`、`armor-offline`、`rune-box`、`rune-rec`、`rune-online`、`rune-online-mpc`、`rune-tune` 改为 Python 直接启动 C++ 二进制
 - 新增了动作级测试和 CLI 分流测试，确保额外参数能正确传递且不会回落到 Bash

@@ -14,6 +14,15 @@ def existing_paths(paths: list[Path]) -> list[Path]:
     return [path for path in paths if path.exists()]
 
 
+def run_and_capture(args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(args, cwd=repo_root(), check=False, text=True, capture_output=True)
+
+
+def run_silently(args: list[str]) -> int:
+    completed = subprocess.run(args, cwd=repo_root(), check=False)
+    return completed.returncode
+
+
 def video_devices() -> list[Path]:
     dev_dir = Path("/dev")
     return sorted(dev_dir.glob("video*"))
@@ -86,3 +95,7 @@ def print_gimbal_port_info(config_path: Path | None = None, console: Console | N
         )
     else:
         printer.print(f"[diagnose] {com_port} not present", markup=False)
+
+
+def command_exists(name: str) -> bool:
+    return shutil.which(name) is not None
