@@ -140,6 +140,12 @@
 - 现在 `uv run` 直接读取 `src/` 下的 Python 代码，不再依赖旧 wheel 拷贝
 - 这能显著减少“改了源码但运行结果还是旧代码”的错觉和额外重装次数
 
+### 20. diagnostics cpp 删除路线图
+
+- 新增了 [docs/diagnostics_cpp_removal_roadmap.md](/home/cr/Codes/sp_vision_25/docs/diagnostics_cpp_removal_roadmap.md)
+- 把 `diagnostics/` 下的 C++ 诊断程序分成“当前后端”与“未来可删”两类
+- 明确了每个文件对应的 Python / `pybind11` 替代条件和删除前检查清单
+
 ### 20. TUI 仪表盘升级
 
 - 将 `diagnose/tui.py` 从静态骨架升级为可刷新的仪表盘
