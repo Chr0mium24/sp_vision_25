@@ -45,10 +45,10 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 调用示例：
 
 ```bash
-# 一键封装脚本（推荐，完整说明见 [docs/diagnose/gimbal_diagnose.md](diagnose/gimbal_diagnose.md)）
-./diagnostics/gimbal/diagnose.sh quick
-./diagnostics/gimbal/diagnose.sh rxonly
-./diagnostics/gimbal/diagnose.sh proto
+# Python diagnose 入口（推荐，完整说明见 [docs/diagnose/gimbal_diagnose.md](diagnose/gimbal_diagnose.md)）
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal quick
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal rxonly
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal proto
 
 # 非英雄协议快速诊断：先看串口是否有字节、是否有有效帧（推荐先跑）
 ./build/bin/diag/gimbal/gimbal_link_diag_test configs/standard3.yaml --duration-ms=3000 --summary-ms=1000
@@ -77,13 +77,13 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 
 推荐入口：
 
-- `diagnostics/auto_aim/diagnose.sh`（完整说明见 [docs/diagnose/auto_aim_diagnose.md](diagnose/auto_aim_diagnose.md)）
+- `sp-vision-diagnose auto-aim`（完整说明见 [docs/diagnose/auto_aim_diagnose.md](diagnose/auto_aim_diagnose.md)）
 
 调用示例：
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh armor-rec configs/standard3.yaml
-./diagnostics/auto_aim/diagnose.sh armor-box configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-rec configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-box configs/standard3.yaml
 ```
 
 说明：`auto_aim_ui_test` 与 `standard` 均复用 `tasks/auto_aim/auto_aim_runtime.*`，联调链路与主链路核心计算保持一致。
@@ -95,7 +95,7 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 调用示例：
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh armor-tune configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-tune configs/standard3.yaml
 ```
 
 关键交互：
@@ -111,8 +111,8 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 调用示例：
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
-./diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim rune-box configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim rune-tune configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
 ```
 
 说明：该测试是离线数据回放，不依赖真实云台在线回传。
@@ -123,18 +123,18 @@ build/bin/diag/auto_aim/auto_aim_ui_test
 
 推荐入口：
 
-- `diagnostics/camera/diagnose.sh`（完整说明见 [docs/diagnose/camera_diagnose.md](diagnose/camera_diagnose.md)）
+- `sp-vision-diagnose camera`（完整说明见 [docs/diagnose/camera_diagnose.md](diagnose/camera_diagnose.md)）
 
 调用示例：
 
 ```bash
-./diagnostics/camera/diagnose.sh info
-sudo ./diagnostics/camera/diagnose.sh release
-./diagnostics/camera/diagnose.sh tune configs/standard3.yaml --scale=0.7
-./diagnostics/camera/diagnose.sh quick configs/standard3.yaml
-./diagnostics/camera/diagnose.sh window configs/standard3.yaml --scale=0.7
-./diagnostics/camera/diagnose.sh detect configs/standard3.yaml
-./diagnostics/camera/diagnose.sh usb configs/sentry.yaml --name=video0 -d
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera info
+sudo UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera release
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera tune configs/standard3.yaml --scale=0.7
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera quick configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera window configs/standard3.yaml --scale=0.7
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera detect configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.yaml --name=video0 -d
 ```
 
 ## 3. 可执行文件分组

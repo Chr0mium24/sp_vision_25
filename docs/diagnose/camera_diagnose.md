@@ -1,6 +1,6 @@
 # Camera Diagnose 使用说明
 
-本文档说明 `diagnostics/camera/diagnose.sh` 的常用用法。
+本文档说明 `sp-vision-diagnose camera` 的常用用法。
 
 ## 1. 前置条件
 
@@ -16,7 +16,7 @@ bash build.sh
 ## 2. 基本用法
 
 ```bash
-diagnostics/camera/diagnose.sh <action> [config.yaml] [extra args...]
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera <action> [config.yaml] [extra args...]
 ```
 
 不带参数时会显示帮助说明。
@@ -26,7 +26,7 @@ diagnostics/camera/diagnose.sh <action> [config.yaml] [extra args...]
 ### 3.1 查看设备
 
 ```bash
-./diagnostics/camera/diagnose.sh info
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera info
 ```
 
 作用：
@@ -37,7 +37,7 @@ diagnostics/camera/diagnose.sh <action> [config.yaml] [extra args...]
 ### 3.2 工业相机快速联通
 
 ```bash
-./diagnostics/camera/diagnose.sh quick configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera quick configs/standard3.yaml
 ```
 
 作用：跑 `camera_test`，持续输出 FPS。
@@ -47,13 +47,13 @@ diagnostics/camera/diagnose.sh <action> [config.yaml] [extra args...]
 当工业相机被 `component_container_mt` 或 `rm_bringup` 占用时，先执行：
 
 ```bash
-sudo ./diagnostics/camera/diagnose.sh release
+sudo UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera release
 ```
 
 默认目标设备为 `2bdf:0001`（HikRobot MV-CS016-10UC）。可选参数：
 
 ```bash
-sudo ./diagnostics/camera/diagnose.sh release --vidpid=2bdf:0001 --force
+sudo UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera release --vidpid=2bdf:0001 --force
 ```
 
 说明：
@@ -65,7 +65,7 @@ sudo ./diagnostics/camera/diagnose.sh release --vidpid=2bdf:0001 --force
 ### 3.4 交互调参并重载窗口（推荐）
 
 ```bash
-./diagnostics/camera/diagnose.sh tune configs/standard3.yaml --scale=0.7
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera tune configs/standard3.yaml --scale=0.7
 ```
 
 作用：
@@ -86,7 +86,7 @@ sudo ./diagnostics/camera/diagnose.sh release --vidpid=2bdf:0001 --force
 可选：
 
 ```bash
-./diagnostics/camera/diagnose.sh tune configs/standard3.yaml --scale=0.7 --show-log
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera tune configs/standard3.yaml --scale=0.7 --show-log
 ```
 
 `--show-log` 会显示窗口进程日志（包含 FPS 输出）。
@@ -94,7 +94,7 @@ sudo ./diagnostics/camera/diagnose.sh release --vidpid=2bdf:0001 --force
 ### 3.5 工业相机窗口预览
 
 ```bash
-./diagnostics/camera/diagnose.sh window configs/standard3.yaml --scale=0.7
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera window configs/standard3.yaml --scale=0.7
 ```
 
 作用：打开预览窗口，按 `q` 退出。
@@ -102,19 +102,19 @@ sudo ./diagnostics/camera/diagnose.sh release --vidpid=2bdf:0001 --force
 ### 3.6 工业相机 + 检测链路
 
 ```bash
-./diagnostics/camera/diagnose.sh detect configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera detect configs/standard3.yaml
 ```
 
 可选传统方法：
 
 ```bash
-./diagnostics/camera/diagnose.sh detect configs/standard3.yaml --tradition=true
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera detect configs/standard3.yaml --tradition=true
 ```
 
 ### 3.7 采图保存
 
 ```bash
-./diagnostics/camera/diagnose.sh save configs/standard3.yaml --output-folder=assets/camera_captures
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera save configs/standard3.yaml --output-folder=assets/camera_captures
 ```
 
 在窗口内按键：
@@ -125,20 +125,20 @@ sudo ./diagnostics/camera/diagnose.sh release --vidpid=2bdf:0001 --force
 ### 3.8 USB 相机联通 / 检测
 
 ```bash
-./diagnostics/camera/diagnose.sh usb configs/sentry.yaml --name=video0 -d
-./diagnostics/camera/diagnose.sh usb-detect configs/sentry.yaml --name=video0 -d
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb configs/sentry.yaml --name=video0 -d
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera usb-detect configs/sentry.yaml --name=video0 -d
 ```
 
 ### 3.9 线程与手眼测试
 
 ```bash
-./diagnostics/camera/diagnose.sh thread configs/ascento.yaml
-./diagnostics/camera/diagnose.sh handeye configs/handeye.yaml -d
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera thread configs/ascento.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera handeye configs/handeye.yaml -d
 ```
 
 ## 4. 排查建议
 
 - 工业相机无图像：先确认 SDK 安装、配置里的 `camera_name` 与设备匹配。
-- 工业相机被占用：先跑 `sudo ./diagnostics/camera/diagnose.sh release` 再重试 `quick/window/detect`。
+- 工业相机被占用：先跑 `sudo UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera release` 再重试 `quick/window/detect`。
 - USB 相机无图像：先跑 `info`，确认 `/dev/video*` 是否存在、`--name` 是否匹配。
 - 无图形界面环境：优先使用 `quick`（无窗口）或去掉 `-d`。

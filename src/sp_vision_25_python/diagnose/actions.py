@@ -176,7 +176,7 @@ def _run_camera_release(extra_args: list[str]) -> int:
 
     if os.geteuid() != 0:
         print("[release] Please run with sudo.")
-        print("  sudo diagnostics/camera/diagnose.sh release")
+        print("  sudo UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera release")
         return 1
 
     print(f"[release] target vid:pid={vidpid}")

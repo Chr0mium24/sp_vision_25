@@ -145,3 +145,9 @@
 - 将 `diagnose/tui.py` 从静态骨架升级为可刷新的仪表盘
 - 现在 TUI 会展示 workspace 状态、pybind11 状态，以及 camera / gimbal / auto-aim 的二进制清单
 - 为三个业务域补充了常用命令入口提示，后续可以继续在这里挂动态参数面板
+
+### 21. 旧 diagnose 脚本删除
+
+- 删除了 `diagnostics/camera/diagnose.sh`、`diagnostics/gimbal/diagnose.sh`、`diagnostics/auto_aim/diagnose.sh`
+- 当前用户文档与调用示例已经迁移到 `sp-vision-diagnose` 入口
+- 保留的 `diagnostics/*.cpp` 仍然是 Python diagnose 直接调用的 C++ 测试/诊断目标，不属于可删除的“旧东西”

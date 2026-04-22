@@ -1,6 +1,6 @@
 # Auto Aim Diagnose 使用说明
 
-本文档说明 `diagnostics/auto_aim/diagnose.sh` 的用法，覆盖装甲板与 Power Rune 的识别、画框和调参。
+本文档说明 `sp-vision-diagnose auto-aim` 的用法，覆盖装甲板与 Power Rune 的识别、画框和调参。
 
 ## 1. 前置条件
 
@@ -19,7 +19,7 @@ bash build.sh
 ## 2. 基本用法
 
 ```bash
-diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim <action> [config.yaml] [extra args...]
 ```
 
 不带参数时会显示帮助说明。
@@ -29,13 +29,13 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 ### 3.1 查看可执行文件状态
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh list
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim list
 ```
 
 ### 3.2 装甲板在线识别 + 画框（推荐）
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh armor-box configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-box configs/standard3.yaml
 ```
 
 说明：
@@ -49,7 +49,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 ### 3.3 装甲板在线识别（无 GUI）
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh armor-rec configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-rec configs/standard3.yaml
 ```
 
 说明：适合远程终端，仅看识别状态和控制输出。
@@ -57,7 +57,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 ### 3.4 装甲板在线调参（可导出 YAML）
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh armor-tune configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-tune configs/standard3.yaml
 ```
 
 关键交互：
@@ -69,7 +69,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 ### 3.5 装甲板离线回放
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh armor-offline configs/demo.yaml assets/demo/demo --start-index=0 --end-index=0
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-offline configs/demo.yaml assets/demo/demo --start-index=0 --end-index=0
 ```
 
 说明：`input-prefix` 传前缀，程序读取 `<prefix>.avi` 和 `<prefix>.txt`。
@@ -77,7 +77,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 ### 3.6 Power Rune 识别 + 画框（离线）
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh rune-box configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim rune-box configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
 ```
 
 说明：
@@ -88,7 +88,7 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 ### 3.7 Power Rune 调参（脚本交互）
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh rune-tune configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim rune-tune configs/sentry.yaml assets/demo/power_rune_demo --start-index=0 --end-index=0
 ```
 
 调参命令：
@@ -106,8 +106,8 @@ diagnostics/auto_aim/diagnose.sh <action> [config.yaml] [extra args...]
 ### 3.8 Power Rune 在线调试（可选）
 
 ```bash
-./diagnostics/auto_aim/diagnose.sh rune-online configs/standard3.yaml
-./diagnostics/auto_aim/diagnose.sh rune-online-mpc configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim rune-online configs/standard3.yaml
+UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim rune-online-mpc configs/standard3.yaml
 ```
 
 说明：依赖 `build/bin/diag/auto_buff/auto_buff_debug` 与 `build/bin/diag/auto_buff/auto_buff_debug_mpc`。
