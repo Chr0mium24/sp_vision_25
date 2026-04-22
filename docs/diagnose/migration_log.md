@@ -59,3 +59,11 @@
 - Python 侧可以读取 `state` 与调试信息
 - 新增了 `python_tests/test_tracker_binding.py`
 - 当前 Python 测试已覆盖 CRC、EKF、Armor、Solver、Target、Tracker
+
+### 9. Aimer 绑定
+
+- 新增了 `auto_aim::Aimer` 的 Python 绑定
+- Python 侧可以直接基于真实 `Target` 计算瞄准命令
+- Python 侧可以读取 `AimerDebug`
+- 新增了 `python_tests/test_aimer_binding.py`
+- 当前 Python 测试已覆盖 CRC、EKF、Armor、Solver、Target、Tracker、Aimer

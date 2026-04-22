@@ -19,6 +19,7 @@ add_library(sp_vision_bindings MODULE
     auto_aim/solver_bindings.cpp
     auto_aim/target_bindings.cpp
     auto_aim/tracker_bindings.cpp
+    auto_aim/aimer_bindings.cpp
     ${PROJECT_SOURCE_DIR}/tools/crc.cpp
     ${PROJECT_SOURCE_DIR}/tools/extended_kalman_filter.cpp
     ${PROJECT_SOURCE_DIR}/tools/logger.cpp
@@ -28,6 +29,7 @@ add_library(sp_vision_bindings MODULE
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/solver.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/target.cpp
     ${PROJECT_SOURCE_DIR}/tasks/auto_aim/tracker.cpp
+    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/aimer.cpp
 )
 
 target_include_directories(sp_vision_bindings PRIVATE
