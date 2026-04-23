@@ -33,3 +33,21 @@ set_app_output(auto_buff_debug debug)
 set_app_output(auto_buff_debug_mpc debug)
 set_app_output(uav uav)
 set_app_output(uav_debug debug)
+
+# 只有在找到 ROS 环境时才会添加 sentry 系列入口
+if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND rosidl_typesupport_cpp_FOUND AND sp_msgs_FOUND)
+    add_executable(sentry ../src/sentry.cpp)
+    add_executable(sentry_bp ../src/sentry_bp.cpp)
+    add_executable(sentry_debug ../src/sentry_debug.cpp)
+    add_executable(sentry_multithread ../src/sentry_multithread.cpp)
+
+    target_link_libraries(sentry ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim omniperception tools io)
+    target_link_libraries(sentry_bp ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim omniperception tools io)
+    target_link_libraries(sentry_debug ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim omniperception tools io)
+    target_link_libraries(sentry_multithread ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim omniperception tools io)
+
+    set_app_output(sentry sentry)
+    set_app_output(sentry_bp sentry)
+    set_app_output(sentry_debug sentry)
+    set_app_output(sentry_multithread sentry)
+endif()
