@@ -4,7 +4,7 @@ import sp_vision_bindings as svb
 
 
 def test_aimer_aim_returns_command_tuple_and_debug():
-    config = Path(__file__).resolve().parents[1] / "configs" / "demo.yaml"
+    config = Path(__file__).resolve().parents[2] / "configs" / "demo.yaml"
     solver = svb.Solver(str(config))
     target = svb.Target.from_armor(
         svb.Armor(4, 0.95, (0, 0, 0, 0), solver.reproject_armor(

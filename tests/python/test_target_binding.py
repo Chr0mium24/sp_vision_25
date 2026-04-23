@@ -6,7 +6,7 @@ import sp_vision_bindings as svb
 
 
 def test_target_from_armor_predict_update():
-    config = Path(__file__).resolve().parents[1] / "configs" / "demo.yaml"
+    config = Path(__file__).resolve().parents[2] / "configs" / "demo.yaml"
     solver = svb.Solver(str(config))
 
     xyz = np.array([1.4, -0.2, 0.35], dtype=float)

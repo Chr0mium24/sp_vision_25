@@ -6,7 +6,7 @@ import sp_vision_bindings as svb
 
 
 def test_runtime_constructs_and_steps_on_blank_image():
-    config = Path(__file__).resolve().parents[1] / "configs" / "demo.yaml"
+    config = Path(__file__).resolve().parents[2] / "configs" / "demo.yaml"
     runtime = svb.Runtime(str(config), False)
 
     image = np.zeros((480, 640, 3), dtype=np.uint8)

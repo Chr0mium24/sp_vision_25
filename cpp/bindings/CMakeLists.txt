@@ -11,29 +11,31 @@ if(NOT PYBIND11_INCLUDE_RESULT EQUAL 0 OR NOT EXISTS "${PYBIND11_INCLUDE_DIR}/py
     message(FATAL_ERROR "pybind11 headers not found in the active Python environment.")
 endif()
 
+set(CPP_SOURCE_DIR "${PROJECT_SOURCE_DIR}/cpp")
+
 if(APPLE)
     set(SERIAL_BINDING_SOURCES
-        ${PROJECT_SOURCE_DIR}/io/serial/src/serial.cc
-        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/unix.cc
-        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_osx.cc)
+        ${CPP_SOURCE_DIR}/io/serial/src/serial.cc
+        ${CPP_SOURCE_DIR}/io/serial/src/impl/unix.cc
+        ${CPP_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_osx.cc)
 elseif(UNIX)
     set(SERIAL_BINDING_SOURCES
-        ${PROJECT_SOURCE_DIR}/io/serial/src/serial.cc
-        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/unix.cc
-        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_linux.cc)
+        ${CPP_SOURCE_DIR}/io/serial/src/serial.cc
+        ${CPP_SOURCE_DIR}/io/serial/src/impl/unix.cc
+        ${CPP_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_linux.cc)
 else()
     set(SERIAL_BINDING_SOURCES
-        ${PROJECT_SOURCE_DIR}/io/serial/src/serial.cc
-        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/win.cc
-        ${PROJECT_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_win.cc)
+        ${CPP_SOURCE_DIR}/io/serial/src/serial.cc
+        ${CPP_SOURCE_DIR}/io/serial/src/impl/win.cc
+        ${CPP_SOURCE_DIR}/io/serial/src/impl/list_ports/list_ports_win.cc)
 endif()
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-  set(CAMERA_VENDOR_LIB_DIR ${PROJECT_SOURCE_DIR}/io/hikrobot/lib/amd64)
-  set(MINDVISION_VENDOR_LIB_DIR ${PROJECT_SOURCE_DIR}/io/mindvision/lib/amd64)
+  set(CAMERA_VENDOR_LIB_DIR ${CPP_SOURCE_DIR}/io/hikrobot/lib/amd64)
+  set(MINDVISION_VENDOR_LIB_DIR ${CPP_SOURCE_DIR}/io/mindvision/lib/amd64)
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
-  set(CAMERA_VENDOR_LIB_DIR ${PROJECT_SOURCE_DIR}/io/hikrobot/lib/arm64)
-  set(MINDVISION_VENDOR_LIB_DIR ${PROJECT_SOURCE_DIR}/io/mindvision/lib/arm64)
+  set(CAMERA_VENDOR_LIB_DIR ${CPP_SOURCE_DIR}/io/hikrobot/lib/arm64)
+  set(MINDVISION_VENDOR_LIB_DIR ${CPP_SOURCE_DIR}/io/mindvision/lib/arm64)
 else()
   message(FATAL_ERROR "Unsupported architecture for bindings: ${CMAKE_HOST_SYSTEM_PROCESSOR}!")
 endif()
@@ -52,32 +54,33 @@ add_library(sp_vision_bindings MODULE
     auto_aim/tracker_bindings.cpp
     auto_aim/aimer_bindings.cpp
     auto_aim/runtime_bindings.cpp
-    ${PROJECT_SOURCE_DIR}/io/hikrobot/hikrobot.cpp
-    ${PROJECT_SOURCE_DIR}/io/mindvision/mindvision.cpp
-    ${PROJECT_SOURCE_DIR}/io/usbcamera/usbcamera.cpp
-    ${PROJECT_SOURCE_DIR}/io/camera.cpp
-    ${PROJECT_SOURCE_DIR}/io/cboard.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/armor.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/solver.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/target.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/tracker.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/aimer.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/auto_aim_runtime.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/yolo.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/classifier.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/detector.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/models/yolov5.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/models/yolov8.cpp
-    ${PROJECT_SOURCE_DIR}/tasks/auto_aim/models/yolo11.cpp
-    ${PROJECT_SOURCE_DIR}/io/gimbal/gimbal.cpp
+    ${CPP_SOURCE_DIR}/io/hikrobot/hikrobot.cpp
+    ${CPP_SOURCE_DIR}/io/mindvision/mindvision.cpp
+    ${CPP_SOURCE_DIR}/io/usbcamera/usbcamera.cpp
+    ${CPP_SOURCE_DIR}/io/camera.cpp
+    ${CPP_SOURCE_DIR}/io/cboard.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/armor.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/solver.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/target.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/tracker.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/aimer.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/auto_aim_runtime.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/yolo.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/classifier.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/detector.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/models/yolov5.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/models/yolov8.cpp
+    ${CPP_SOURCE_DIR}/tasks/auto_aim/models/yolo11.cpp
+    ${CPP_SOURCE_DIR}/io/gimbal/gimbal.cpp
     ${SERIAL_BINDING_SOURCES}
 )
 
 target_include_directories(sp_vision_bindings PRIVATE
     "${PROJECT_SOURCE_DIR}"
-    "${PROJECT_SOURCE_DIR}/io/serial/include"
-    "${PROJECT_SOURCE_DIR}/io/hikrobot/include"
-    "${PROJECT_SOURCE_DIR}/io/mindvision/include"
+    "${CPP_SOURCE_DIR}"
+    "${CPP_SOURCE_DIR}/io/serial/include"
+    "${CPP_SOURCE_DIR}/io/hikrobot/include"
+    "${CPP_SOURCE_DIR}/io/mindvision/include"
     "${PYBIND11_INCLUDE_DIR}"
 )
 target_link_directories(sp_vision_bindings PRIVATE

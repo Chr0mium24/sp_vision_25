@@ -6,7 +6,7 @@ import sp_vision_bindings as svb
 
 
 def test_solver_reproject_and_solve_roundtrip():
-    config = Path(__file__).resolve().parents[1] / "configs" / "demo.yaml"
+    config = Path(__file__).resolve().parents[2] / "configs" / "demo.yaml"
     solver = svb.Solver(str(config))
 
     xyz = np.array([1.2, 0.3, 0.5], dtype=float)

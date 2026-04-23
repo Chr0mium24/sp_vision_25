@@ -5,6 +5,6 @@ from pathlib import Path
 
 
 def pytest_configure() -> None:
-    build_python = Path(__file__).resolve().parents[1] / "build" / "python"
+    build_python = Path(__file__).resolve().parents[2] / "build" / "python"
     if build_python.exists():
         sys.path.insert(0, str(build_python))
