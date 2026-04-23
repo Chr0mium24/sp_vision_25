@@ -7,7 +7,6 @@
 ```text
 cpp/        C++ 核心代码
 python/     Python 工程
-tests/      C++ 与 Python 测试
 configs/    YAML 配置
 assets/     模型、布局、示例输入
 docs/       使用文档
@@ -22,9 +21,11 @@ build/      本地构建产物
 
 ```text
 cpp/
+├── CMakeLists.txt
 ├── apps/       主程序入口
 ├── io/         相机、串口、云台、ROS2 等 I/O
 ├── tasks/      auto_aim、auto_buff、omniperception
+├── tests/      C++ 测试与联调程序
 ├── tools/      通用基础库
 └── bindings/   pybind11 绑定
 ```
@@ -43,6 +44,7 @@ cpp/
 ```text
 python/
 ├── pyproject.toml
+├── tests/
 ├── uv.lock
 ├── build_backend.py
 └── src/
@@ -59,16 +61,15 @@ python/
 
 ## 4. 测试部分
 
-测试目录已经统一到 `tests/`：
+测试已经分别放回各自子工程：
 
 ```text
-tests/
-├── cpp/
-└── python/
+cpp/tests/
+python/tests/
 ```
 
-- `tests/cpp/`：C++ smoke test、设备联调程序、离线算法测试
-- `tests/python/`：Python CLI 测试与 pybind11 行为测试
+- `cpp/tests/`：C++ smoke test、设备联调程序、离线算法测试
+- `python/tests/`：Python CLI 测试与 pybind11 行为测试
 
 ## 5. 配置、资源与日志
 

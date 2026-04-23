@@ -38,7 +38,7 @@ sudo apt install -y \
 ## 3. 构建 C++ 工程
 
 ```bash
-cmake -S . -B build
+cmake -S cpp -B build
 cmake --build build -j"$(nproc)"
 ```
 
@@ -70,7 +70,7 @@ uv --project python sync
 运行 Python 测试：
 
 ```bash
-uv --project python run pytest tests/python
+uv --project python run pytest python/tests
 ```
 
 查看 diagnose 状态：

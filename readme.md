@@ -77,15 +77,15 @@ IMU型号：使用C板内置BMI088作为IMU\
 
 2. 编译：
     ```bash
-    cmake -B build
-    make -C build/ -j`nproc`
+    cmake -S cpp -B build
+    cmake --build build -j"$(nproc)"
     ```
 
 3. 使用 uv 管理 Python 环境（可选）
     本项目主体仍为 C++/CMake，但仓库已经补充了 `uv` 工作区，适合后续管理 Python 脚本、测试与 pybind11 绑定代码。
     ```bash
     uv --project python sync
-    uv --project python run pytest tests/python
+    uv --project python run pytest python/tests
     ```
     现在 Python 包是以 editable 方式安装的，`python/src/` 下的 Python 改动会直接反映到 `uv --project python run`；通常不需要反复重装。
     如果想一次性准备好项目环境，可以直接运行：
@@ -237,28 +237,21 @@ sp_vision_25
 ├── assets         // 包含 demo 素材、网络权重、布局文件等
 │   └── ...
 ├── cpp            // C++ 主体代码
+│   ├── CMakeLists.txt
 │   ├── apps       // 各兵种/调试程序入口
 │   ├── bindings   // pybind11 绑定
 │   ├── io         // 硬件抽象层，见 3.4 软件架构
 │   ├── tasks      // 功能层，见 3.4 软件架构
+│   ├── tests      // C++ 测试
 │   └── tools      // 工具层，见 3.4 软件架构
 ├── python         // Python 包、项目元数据与打包后端
 │   ├── .python-version
 │   ├── pyproject.toml
+│   ├── tests
 │   ├── uv.lock
 │   ├── build_backend.py
 │   └── src
 │       └── sp_vision_25_python
-├── tests
-│   ├── cpp        // C++ 测试
-│   │   ├── auto_aim
-│   │   ├── auto_buff
-│   │   ├── camera
-│   │   ├── gimbal
-│   │   ├── planner
-│   │   ├── ros2
-│   │   └── system
-│   └── python     // Python 测试
 ├── configs        // 每台机器人的 YAML 配置文件
 │   └── ...
 ├── docs
@@ -268,7 +261,6 @@ sp_vision_25
 │   ├── init_env.sh
 │   ├── prechange_backup.sh
 │   └── watchdog.sh
-├── CMakeLists.txt // CMake 配置文件
 └── readme.md
 ```    
 

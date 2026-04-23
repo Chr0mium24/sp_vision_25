@@ -9,7 +9,7 @@ from pathlib import Path
 def repo_root() -> Path:
     current = Path(__file__).resolve()
     for candidate in current.parents:
-        if (candidate / "CMakeLists.txt").exists() and (candidate / "cpp").is_dir() and (
+        if (candidate / "cpp" / "CMakeLists.txt").exists() and (candidate / "cpp").is_dir() and (
             candidate / "python"
         ).is_dir():
             return candidate

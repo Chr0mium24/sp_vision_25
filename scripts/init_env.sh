@@ -221,7 +221,7 @@ fi
 
 if [[ "${RUN_TESTS}" == "1" ]]; then
   echo "[init_env] running python tests"
-  run env UV_CACHE_DIR=/tmp/uv-cache uv --project python run pytest tests/python -q
+  run env UV_CACHE_DIR=/tmp/uv-cache uv --project python run pytest python/tests -q
 fi
 
 echo "[init_env] done"

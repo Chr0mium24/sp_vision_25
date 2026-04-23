@@ -11,7 +11,7 @@ if(NOT PYBIND11_INCLUDE_RESULT EQUAL 0 OR NOT EXISTS "${PYBIND11_INCLUDE_DIR}/py
     message(FATAL_ERROR "pybind11 headers not found in the active Python environment.")
 endif()
 
-set(CPP_SOURCE_DIR "${PROJECT_SOURCE_DIR}/cpp")
+set(CPP_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
 if(APPLE)
     set(SERIAL_BINDING_SOURCES

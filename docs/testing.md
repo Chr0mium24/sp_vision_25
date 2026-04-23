@@ -5,34 +5,34 @@
 ## 1. 先构建，再测试
 
 ```bash
-cmake -S . -B build
+cmake -S cpp -B build
 cmake --build build -j"$(nproc)"
 ```
 
 Python 测试：
 
 ```bash
-uv --project python run pytest tests/python
+uv --project python run pytest python/tests
 ```
 
 如果你希望显式使用独立缓存目录：
 
 ```bash
-UV_CACHE_DIR=/tmp/uv-cache uv --project python run pytest tests/python
+UV_CACHE_DIR=/tmp/uv-cache uv --project python run pytest python/tests
 ```
 
-## 2. `tests/` 的角色
+## 2. 测试目录的角色
 
-`tests/` 现在是统一测试入口，但内部仍然分两类职责：
+测试目录已经分别放回 `cpp/` 和 `python/`：
 
-- `tests/cpp/`
+- `cpp/tests/`
   - 构建真实 C++ 测试程序
   - 覆盖设备联调、离线回放和 smoke test
-- `tests/python/`
+- `python/tests/`
   - 覆盖 Python CLI
   - 覆盖 pybind11 暴露出来的真实 C++ 类型
 
-它不是一个“只有断言的单元测试目录”。这里既有自动化测试，也有联调程序。
+它们都不只是“纯断言单测目录”，而是同时承载自动化测试和联调程序。
 
 ## 3. C++ 测试输出位置
 
