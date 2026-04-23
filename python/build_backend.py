@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Iterable
 from zipfile import ZIP_DEFLATED, ZipFile
 
-PYTHON_ROOT = Path(__file__).resolve().parent
-ROOT = PYTHON_ROOT.parent
-SRC_ROOT = PYTHON_ROOT / "src"
+ROOT = Path(__file__).resolve().parent
+REPO_ROOT = ROOT.parent
+SRC_ROOT = ROOT / "src"
 PACKAGE_NAME = "sp_vision_25_python"
 DIST_NAME = "sp_vision_25_python"
 WHEEL_TAG = "py3-none-any"

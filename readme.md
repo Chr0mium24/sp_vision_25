@@ -84,10 +84,10 @@ IMU型号：使用C板内置BMI088作为IMU\
 3. 使用 uv 管理 Python 环境（可选）
     本项目主体仍为 C++/CMake，但仓库已经补充了 `uv` 工作区，适合后续管理 Python 脚本、测试与 pybind11 绑定代码。
     ```bash
-    uv sync
-    uv run pytest
+    uv --project python sync
+    uv --project python run pytest tests/python
     ```
-    现在 Python 包是以 editable 方式安装的，`python/src/` 下的 Python 改动会直接反映到 `uv run`；通常不需要反复重装。
+    现在 Python 包是以 editable 方式安装的，`python/src/` 下的 Python 改动会直接反映到 `uv --project python run`；通常不需要反复重装。
     如果想一次性准备好项目环境，可以直接运行：
     ```bash
     bash scripts/init_env.sh
@@ -99,37 +99,37 @@ IMU型号：使用C板内置BMI088作为IMU\
     如需切换 Python 版本：
     ```bash
     uv python install 3.12
-    uv python pin 3.12
-    uv sync
+    uv --directory python python pin 3.12
+    uv --project python sync
     ```
 
 4. Python diagnose 入口（可选）
     现在已经有一个统一的 Python 控制面入口，`list`、`camera info`、`camera release`、`camera tune`、`gimbal port-info` 以及大部分高频启动命令都已经由 Python 直接接管。`sp-vision-diagnose` 现在按 `camera`、`gimbal`、`auto-aim` 三个子应用组织，并新增了 `tui` 入口作为后续面板的基础。
     ```bash
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose status
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose bindings
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera list
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera quick configs/standard3.yaml
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera info
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera release --force
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose camera tune configs/standard3.yaml
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal help
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal quick configs/standard3.yaml
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose gimbal port-info
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim list
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim armor-box configs/standard3.yaml
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose auto-aim rune-tune configs/sentry.yaml assets/demo/power_rune_demo
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-diagnose tui
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose status
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose bindings
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose camera list
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose camera quick configs/standard3.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose camera info
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose camera release --force
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose camera tune configs/standard3.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose gimbal help
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose gimbal quick configs/standard3.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose gimbal port-info
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose auto-aim list
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose auto-aim armor-box configs/standard3.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose auto-aim rune-tune configs/sentry.yaml assets/demo/power_rune_demo
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-diagnose tui
     ```
 
 5. Python 标定入口（可选）
     标定相关的小工具也已经迁移到 Python，统一入口是 `sp-vision-calibration`：
     ```bash
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration capture configs/calibration.yaml assets/img_with_q --imu
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration calibrate-camera assets/img_with_q -c configs/calibration.yaml
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration calibrate-handeye assets/img_with_q -c configs/calibration.yaml
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration calibrate-robotworld-handeye assets/img_with_q -c configs/calibration.yaml
-    UV_CACHE_DIR=/tmp/uv-cache uv run sp-vision-calibration split-video records/Big/2024-05-14_11-6-26 -p records/Big/2024-05-14_11-6-26_cut
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-calibration capture configs/calibration.yaml assets/img_with_q --imu
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-calibration calibrate-camera assets/img_with_q -c configs/calibration.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-calibration calibrate-handeye assets/img_with_q -c configs/calibration.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-calibration calibrate-robotworld-handeye assets/img_with_q -c configs/calibration.yaml
+    UV_CACHE_DIR=/tmp/uv-cache uv --project python run sp-vision-calibration split-video records/Big/2024-05-14_11-6-26 -p records/Big/2024-05-14_11-6-26_cut
     ```
 
 6. 运行demo:
@@ -234,7 +234,7 @@ IMU型号：使用C板内置BMI088作为IMU\
 ### 3.5 文件结构
 ```
 sp_vision_25
-├── assets         // 包含 demo 素材、网络权重等
+├── assets         // 包含 demo 素材、网络权重、布局文件等
 │   └── ...
 ├── cpp            // C++ 主体代码
 │   ├── apps       // 各兵种/调试程序入口
@@ -242,7 +242,10 @@ sp_vision_25
 │   ├── io         // 硬件抽象层，见 3.4 软件架构
 │   ├── tasks      // 功能层，见 3.4 软件架构
 │   └── tools      // 工具层，见 3.4 软件架构
-├── python         // Python 包与打包后端
+├── python         // Python 包、项目元数据与打包后端
+│   ├── .python-version
+│   ├── pyproject.toml
+│   ├── uv.lock
 │   ├── build_backend.py
 │   └── src
 │       └── sp_vision_25_python
@@ -263,7 +266,6 @@ sp_vision_25
 ├── scripts
 │   └── ...
 ├── CMakeLists.txt // CMake 配置文件
-├── pyproject.toml // Python 项目配置
 └── readme.md
 ```    
 

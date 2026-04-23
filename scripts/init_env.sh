@@ -209,7 +209,7 @@ if ! have_cmd uv; then
 fi
 
 echo "[init_env] syncing python environment"
-run env UV_CACHE_DIR=/tmp/uv-cache uv sync
+run env UV_CACHE_DIR=/tmp/uv-cache uv --project python sync
 
 install_local_sdk "MindVision SDK" "${MINDVISION_INSTALLER}"
 install_local_sdk "HikRobot SDK" "${HIKROBOT_INSTALLER}"
@@ -221,7 +221,7 @@ fi
 
 if [[ "${RUN_TESTS}" == "1" ]]; then
   echo "[init_env] running python tests"
-  run env UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q
+  run env UV_CACHE_DIR=/tmp/uv-cache uv --project python run pytest tests/python -q
 fi
 
 echo "[init_env] done"

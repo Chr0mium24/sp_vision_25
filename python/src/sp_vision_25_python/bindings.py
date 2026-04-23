@@ -9,7 +9,9 @@ from pathlib import Path
 def repo_root() -> Path:
     current = Path(__file__).resolve()
     for candidate in current.parents:
-        if (candidate / "pyproject.toml").exists() and (candidate / "CMakeLists.txt").exists():
+        if (candidate / "CMakeLists.txt").exists() and (candidate / "cpp").is_dir() and (
+            candidate / "python"
+        ).is_dir():
             return candidate
     return current.parents[3]
 

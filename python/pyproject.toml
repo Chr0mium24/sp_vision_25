@@ -1,13 +1,13 @@
 [build-system]
 requires = []
 build-backend = "build_backend"
-backend-path = ["python"]
+backend-path = ["."]
 
 [project]
 name = "sp-vision-25-python"
 version = "0.1.0"
 description = "Python workspace for scripts, tests, and future bindings in sp_vision_25."
-readme = "readme.md"
+readme = "../readme.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "opencv-python>=4.10.0",
@@ -30,4 +30,4 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/python"]
+testpaths = ["../tests/python"]
