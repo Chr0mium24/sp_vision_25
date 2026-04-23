@@ -14,7 +14,7 @@ records_new/
 imgs/
 MvSdkLog/
 testvideos/
-watchdog.sh
+/watchdog.sh
 records_24/
 records_25/
 .venv/

@@ -151,13 +151,13 @@ IMU型号：使用C板内置BMI088作为IMU\
         ```
         [Desktop Entry]
         Type=Application
-        Exec=/home/rm/Desktop/sp_vision_25/autostart.sh
+        Exec=/home/rm/Desktop/sp_vision_25/scripts/autostart.sh
         Name=sp_vision
         ```
         注: [Exec](https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html)必须为绝对路径.
     4. 确保`autostart.sh`有可执行权限:
         ```
-        chmod +x autostart.sh
+        chmod +x scripts/autostart.sh
         ```
 
 7. USB2CAN设置（可选）
@@ -264,7 +264,10 @@ sp_vision_25
 ├── docs
 │   └── ...
 ├── scripts
-│   └── ...
+│   ├── autostart.sh
+│   ├── init_env.sh
+│   ├── prechange_backup.sh
+│   └── watchdog.sh
 ├── CMakeLists.txt // CMake 配置文件
 └── readme.md
 ```    
