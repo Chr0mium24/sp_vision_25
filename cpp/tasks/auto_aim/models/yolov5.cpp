@@ -29,8 +29,8 @@ YOLOV5::YOLOV5(const std::string & config_path, bool debug)
   roi_ = cv::Rect(x, y, width, height);
   offset_ = cv::Point2f(x, y);
 
-  save_path_ = "imgs";
-  std::filesystem::create_directory(save_path_);
+  save_path_ = "logs/auto_aim/imgs";
+  std::filesystem::create_directories(save_path_);
   auto model = core_.read_model(model_path_);
   ov::preprocess::PrePostProcessor ppp(model);
   auto & input = ppp.input();

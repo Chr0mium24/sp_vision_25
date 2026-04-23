@@ -1,7 +1,7 @@
 [build-system]
 requires = []
 build-backend = "build_backend"
-backend-path = ["."]
+backend-path = ["python"]
 
 [project]
 name = "sp-vision-25-python"

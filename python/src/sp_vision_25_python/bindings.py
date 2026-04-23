@@ -7,7 +7,11 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    current = Path(__file__).resolve()
+    for candidate in current.parents:
+        if (candidate / "pyproject.toml").exists() and (candidate / "CMakeLists.txt").exists():
+            return candidate
+    return current.parents[3]
 
 
 def build_python_dir() -> Path:
