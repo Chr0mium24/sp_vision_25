@@ -11,9 +11,8 @@
                 "${workspaceFolder}/cpp/io/serial/include",
                 "/usr/include/opencv4",
                 "/usr/include/eigen3",
-                "/opt/intel/openvino_2023.3.0/runtime/include/",
-                "${workspaceFolder}/python/.venv/lib/python3.12/site-packages/pybind11/include",
-                "/opt/ros/humble/include/**"
+                "/usr/include/openvino",
+                "${workspaceFolder}/python/.venv/lib/python3.12/site-packages/pybind11/include"
             ],
             "compilerPath": "/usr/bin/g++",
             "cStandard": "c17",

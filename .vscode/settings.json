@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/python/.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.indexing": true,
+    "cmake.sourceDirectory": "/home/cr/Codes/sp_vision_25/cpp"
+}

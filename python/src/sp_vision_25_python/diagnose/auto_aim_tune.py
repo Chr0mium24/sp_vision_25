@@ -408,6 +408,8 @@ def run_auto_aim_tune(config_path: Path, extra_args: list[str]) -> int:
             key = gui_key
             if key == -1:
                 ev = read_key()
+                if ev is None:
+                    continue
                 if ev.key == Key.Quit:
                     break
                 if ev.key == Key.Left:

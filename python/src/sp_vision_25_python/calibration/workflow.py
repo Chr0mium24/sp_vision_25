@@ -19,7 +19,7 @@ _yaml = YAML()
 _yaml.default_flow_style = False
 
 
-def _flow_list(values: list[float] | np.ndarray) -> CommentedSeq:
+def _flow_list(values: list[float] | tuple[float, ...] | np.ndarray) -> CommentedSeq:
     seq = CommentedSeq([float(value) for value in np.asarray(values, dtype=float).reshape(-1)])
     seq.fa.set_flow_style()
     return seq
@@ -47,7 +47,7 @@ def _detect_pattern(img: np.ndarray, pattern_size: tuple[int, int], pattern_type
     mode = _pattern_mode(pattern_type)
     if mode == "chessboard":
         flags = cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE | cv2.CALIB_CB_FAST_CHECK
-        success, corners = cv2.findChessboardCorners(img, pattern_size, flags)
+        success, corners = cv2.findChessboardCorners(img, pattern_size, flags=flags)
         if success:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             corners = cv2.cornerSubPix(
@@ -59,7 +59,7 @@ def _detect_pattern(img: np.ndarray, pattern_size: tuple[int, int], pattern_type
             )
         return success, [] if not success else corners.reshape(-1, 2).tolist()
 
-    success, corners = cv2.findCirclesGrid(img, pattern_size, cv2.CALIB_CB_SYMMETRIC_GRID)
+    success, corners = cv2.findCirclesGrid(img, pattern_size, flags=cv2.CALIB_CB_SYMMETRIC_GRID)
     return success, [] if not success else corners.reshape(-1, 2).tolist()
 
 

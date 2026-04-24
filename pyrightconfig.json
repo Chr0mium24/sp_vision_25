@@ -1,0 +1,21 @@
+{
+    "autoSearchPaths": false,
+    "venvPath": ".",
+    "venv": "python/.venv",
+    "include": [
+        "python/src",
+        "python/tests"
+    ],
+    "exclude": [
+        "**/node_modules",
+        "**/.*",
+        "**/__pycache__",
+        "build",
+        "cpp"
+    ],
+    "extraPaths": [
+        "python/src",
+        "build/python"
+    ],
+    "pythonVersion": "3.12"
+}

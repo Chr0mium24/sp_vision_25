@@ -542,7 +542,11 @@ def _axis_name(axis: int) -> str:
 
 
 def _delta_deg(after: tuple[float, float, float], before: tuple[float, float, float]) -> tuple[float, float, float]:
-    return tuple((a - b) * RAD2DEG for a, b in zip(after, before))
+    return (
+        (after[0] - before[0]) * RAD2DEG,
+        (after[1] - before[1]) * RAD2DEG,
+        (after[2] - before[2]) * RAD2DEG,
+    )
 
 
 def _dominant_axis(delta: tuple[float, float, float]) -> int:
