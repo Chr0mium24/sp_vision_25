@@ -7,6 +7,7 @@ set(PYTHON_VENV_DIR "${REPO_ROOT}/python/.venv")
 if(NOT EXISTS "${PYTHON_VENV_DIR}/bin/python" AND EXISTS "${REPO_ROOT}/.venv/bin/python")
     set(PYTHON_VENV_DIR "${REPO_ROOT}/.venv")
 endif()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
