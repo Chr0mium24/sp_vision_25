@@ -1,5 +1,4 @@
 {
-    "autoSearchPaths": false,
     "venvPath": ".",
     "venv": "python/.venv",
     "include": [
