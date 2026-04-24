@@ -38,7 +38,7 @@ def _load_bindings() -> Any:
         import sp_vision_bindings as bindings
     except ImportError as exc:  # pragma: no cover - import path is exercised in integration tests
         raise RuntimeError(
-            "sp_vision_bindings is not available. Run ./build.sh or uv --project python sync first."
+            "sp_vision_bindings is not available. Run ./scripts/build.sh or uv --project python sync first."
         ) from exc
     return bindings
 

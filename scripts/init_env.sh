@@ -216,7 +216,7 @@ install_local_sdk "HikRobot SDK" "${HIKROBOT_INSTALLER}"
 
 if [[ "${RUN_BUILD}" == "1" ]]; then
   echo "[init_env] building C++ targets"
-  run bash ./build.sh
+  run bash ./scripts/build.sh
 fi
 
 if [[ "${RUN_TESTS}" == "1" ]]; then
