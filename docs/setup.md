@@ -102,18 +102,32 @@ bash scripts/init_env.sh \
     --hikrobot-installer /path/to/HikRobotSDK.deb
 ```
 
-## 6. 自启脚本
+## 6. 开机自启
 
-桌面环境自启使用：
+推荐使用 `systemd` 注册开机自启，它不依赖桌面环境登录：
 
 ```bash
-scripts/autostart.sh
+chmod +x scripts/servicectl.sh
+scripts/servicectl.sh
 ```
 
-后台守护脚本使用：
+脚本会打开交互菜单，可查看状态、注册自启、启动、停止、重启、查看日志或卸载。也可以直接使用命令：
+
+```bash
+scripts/servicectl.sh status
+sudo scripts/servicectl.sh install
+sudo scripts/servicectl.sh start
+sudo scripts/servicectl.sh uninstall
+```
+
+默认运行 `build/bin/apps/standard/standard configs/standard3.yaml`。如需切换程序或配置：
+
+```bash
+sudo APP_PATH=/abs/path/to/app CONFIG_PATH=/abs/path/to/config.yaml scripts/servicectl.sh install
+```
+
+后台守护脚本仍可单独使用：
 
 ```bash
 scripts/watchdog.sh
 ```
-
-运行日志默认写入 `logs/*.screenlog`。

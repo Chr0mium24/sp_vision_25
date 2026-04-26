@@ -137,28 +137,19 @@ IMU型号：使用C板内置BMI088作为IMU\
     ./build/bin/tests/auto_aim/auto_aim_test
     ```
 
-7. 注册自启：
-    1. 确保已安装`screen`:
-        ```
-        sudo apt install screen
-        ```
-    2. 创建`.desktop`文件:
-        ```
-        mkdir ~/.config/autostart/
-        touch ~/.config/autostart/sp_vision.desktop
-        ```
-    3. 在该文件中写入:
-        ```
-        [Desktop Entry]
-        Type=Application
-        Exec=/home/rm/Desktop/sp_vision_25/scripts/autostart.sh
-        Name=sp_vision
-        ```
-        注: [Exec](https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html)必须为绝对路径.
-    4. 确保`autostart.sh`有可执行权限:
-        ```
-        chmod +x scripts/autostart.sh
-        ```
+7. 注册开机自启：
+    ```
+    chmod +x scripts/servicectl.sh
+    scripts/servicectl.sh
+    ```
+
+    脚本会打开交互菜单，可查看状态、注册自启、启动、停止、重启、查看日志或卸载。也可以直接使用命令：
+    ```
+    scripts/servicectl.sh status
+    sudo scripts/servicectl.sh install
+    sudo scripts/servicectl.sh start
+    sudo scripts/servicectl.sh uninstall
+    ```
 
 7. USB2CAN设置（可选）
     1. 创建`.rules`文件:
